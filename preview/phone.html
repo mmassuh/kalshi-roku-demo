@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0E1114">
+<title>Sign in to your TV — Prototype</title>
+<style>
+/* Phone-side of the device-authorization demo. Tokens from DESIGN.md. */
+:root{
+  --surface:#0E1114; --card:#13161A; --raised:#1B2029; --inset:#1A1D22;
+  --t1:rgba(255,255,255,.92); --t2:rgba(255,255,255,.70); --t3:rgba(255,255,255,.45);
+  --brand:#28CC95; --yes:#28CC95; --yes-tint:rgba(40,204,149,.16);
+  --warn:#FFE14D; --warn-tint:rgba(255,225,77,.14);
+  --stroke:rgba(255,255,255,.16); --hair:rgba(255,255,255,.10);
+  --ui:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{min-height:100%;}
+body{
+  background:var(--surface); color:var(--t1); font-family:var(--ui);
+  padding:max(20px,env(safe-area-inset-top)) 20px max(28px,env(safe-area-inset-bottom));
+  display:flex; flex-direction:column; gap:20px; align-items:center;
+}
+.wrap{width:100%;max-width:420px;display:flex;flex-direction:column;gap:20px;}
+
+.protoBanner{
+  display:flex;gap:10px;align-items:flex-start;
+  background:var(--warn-tint);border-left:3px solid var(--warn);
+  border-radius:8px;padding:12px 14px;
+  font:400 13px/1.45 var(--ui);color:var(--t1);
+}
+.protoBanner b{color:var(--warn);font-weight:600;display:block;margin-bottom:2px;}
+
+.lockup{display:flex;align-items:center;gap:10px;margin-top:4px;}
+.kdot{width:34px;height:34px;border-radius:10px;background:var(--brand);color:#00351F;
+  display:flex;align-items:center;justify-content:center;font:700 20px/1 var(--ui);}
+.lockup .names{font:600 15px/1.2 var(--ui);color:var(--t2);letter-spacing:.02em;}
+.lockup .names b{color:var(--t1);}
+
+h1{font:600 28px/1.2 var(--ui);letter-spacing:-.01em;margin-top:4px;}
+p.sub{font:400 16px/1.5 var(--ui);color:var(--t2);}
+
+.codeCard{
+  background:var(--card);border:1.5px solid var(--hair);border-radius:16px;
+  padding:20px;text-align:center;
+}
+.codeCard .lbl{font:600 12px/1 var(--ui);letter-spacing:.1em;text-transform:uppercase;color:var(--t3);}
+.codeCard .code{margin-top:10px;font:700 34px/1 ui-monospace,SFMono-Regular,Menlo,monospace;
+  letter-spacing:.14em;color:var(--t1);}
+.codeCard .match{margin-top:10px;font:400 13px/1.4 var(--ui);color:var(--t3);}
+
+button{
+  width:100%;height:56px;border:none;border-radius:28px;cursor:pointer;
+  background:var(--yes);color:#fff;font:600 17px/1 var(--ui);
+  transition:transform .12s,opacity .12s;
+}
+button:active{transform:scale(.98);}
+button:disabled{opacity:.5;}
+button.ghost{background:transparent;border:2px solid var(--stroke);color:var(--t1);height:50px;font-size:16px;}
+
+.deny{font:400 14px/1.4 var(--ui);color:var(--t3);text-align:center;}
+
+/* success state */
+#done{display:none;flex-direction:column;gap:20px;align-items:center;text-align:center;}
+body.approved #ask{display:none;}
+body.approved #done{display:flex;}
+.check{width:76px;height:76px;border-radius:50%;background:var(--yes-tint);color:var(--yes);
+  display:flex;align-items:center;justify-content:center;font-size:40px;}
+.nextCard{
+  width:100%;background:var(--card);border:1.5px solid var(--hair);border-radius:16px;
+  padding:18px;text-align:left;font:400 15px/1.55 var(--ui);color:var(--t2);
+}
+.nextCard b{color:var(--t1);font-weight:600;}
+.nextCard .note{display:block;margin-top:10px;padding-top:10px;border-top:1px solid var(--hair);
+  font-size:13px;color:var(--t3);}
+
+footer{font:400 12px/1.5 var(--ui);color:var(--t3);text-align:center;max-width:420px;}
+@media (prefers-reduced-motion: reduce){button{transition:none;}button:active{transform:none;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="protoBanner">
+    <div><b>Prototype — not a real sign-in</b>
+    Concept demo of a Kalshi integration for TV, built by Tappp. No account is involved, nothing is collected, and no credentials are ever requested.</div>
+  </div>
+
+  <div id="ask">
+    <div class="lockup">
+      <span class="kdot">K</span>
+      <span class="names"><b>Kalshi</b> on Tappp</span>
+    </div>
+
+    <h1>Sign in to your TV</h1>
+    <p class="sub">Approving here links the Kalshi panel on your television. In the real product this is where you'd sign in and verify your identity — on your phone, never on the TV.</p>
+
+    <div class="codeCard" style="margin-top:20px;">
+      <div class="lbl">Code shown on your TV</div>
+      <div class="code" id="code">K7QM-3XVP</div>
+      <div class="match">Check that it matches before approving.</div>
+    </div>
+
+    <div style="margin-top:20px;display:flex;flex-direction:column;gap:12px;">
+      <button id="approve">Approve on this device</button>
+      <button class="ghost" id="cancel">Not me — cancel</button>
+    </div>
+  </div>
+
+  <div id="done">
+    <div class="check">✓</div>
+    <h1>Approved</h1>
+    <div class="nextCard">
+      <b>Now look at your TV.</b> Press <b>OK</b> on the remote to continue, or wait a moment.
+      <span class="note">In the real product you wouldn't touch the remote — the TV is polling for this approval and advances on its own. This demo has no shared backend, so the last step is nudged manually.</span>
+    </div>
+  </div>
+
+</div>
+
+<footer>Tappp × Kalshi — TV concept prototype</footer>
+
+<script>
+  // Optional ?c=CODE lets the TV and phone show a matching code.
+  try {
+    var c = new URLSearchParams(location.search).get('c');
+    if (c && /^[A-Z0-9-]{4,12}$/i.test(c)) {
+      document.getElementById('code').textContent = c.toUpperCase();
+    }
+  } catch (e) {}
+
+  document.getElementById('approve').addEventListener('click', function () {
+    document.body.classList.add('approved');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+  document.getElementById('cancel').addEventListener('click', function () {
+    document.getElementById('ask').innerHTML =
+      '<h1>Cancelled</h1><p class="sub">Nothing was linked. You can close this page.</p>';
+  });
+</script>
+</body>
+</html>
