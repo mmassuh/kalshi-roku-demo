@@ -155,6 +155,12 @@ html,body{height:100%;background:#000;overflow:hidden;font-family:var(--font-ui)
 .marRow .top{display:flex;align-items:baseline;justify-content:space-between;gap:12px;}
 .marRow .name{font:500 24px/30px var(--font-ui);color:var(--text-1);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .marRow .pctWrap{flex:0 0 auto;display:flex;align-items:center;gap:8px;}
+/* Return multiplier (rules #1/#3): muted, deliberately lighter weight than .pct so it never
+   competes with the probability number — same role as Kalshi mobile's small gray "1.90x".
+   Held at the type scale's 20px floor (DESIGN.md §4.2 "no text below 20px on TV, ever") —
+   secondary is expressed through weight (500 vs 600) and color (--text-3 vs --text-1), not
+   by going smaller than the floor allows. */
+.marRow .mult{font:500 20px/1 var(--font-ui);color:var(--text-3);font-variant-numeric:tabular-nums;transition:color .2s;}
 .marRow .pct{font:600 26px/32px var(--font-ui);color:var(--text-1);font-variant-numeric:tabular-nums;transition:color .2s;}
 .marRow .bar{height:8px;border-radius:4px;background:var(--fill-ctl);overflow:hidden;}
 .marRow .barFill{height:100%;border-radius:4px;background:var(--yes);transition:width 400ms ease-out;}
@@ -165,6 +171,7 @@ html,body{height:100%;background:#000;overflow:hidden;font-family:var(--font-ui)
    mechanism — a shared split-bar was considered and rejected as over-engineering for a
    576px panel; two clearly-labelled bars read just as unambiguously. */
 .marRow.h2h .name{font:600 28px/34px var(--font-cond);}
+.marRow.h2h .mult{font:500 22px/1 var(--font-ui);}
 .marRow.h2h .pct{font:600 40px/44px var(--font-cond);}
 .marRow.h2h .bar{height:14px;margin-top:2px;}
 /* auto-dismissing "meaningful movement" badge (Priority 2b) — purely decorative: no
@@ -229,13 +236,18 @@ html,body{height:100%;background:#000;overflow:hidden;font-family:var(--font-ui)
 .dEyebrow .cat{font:600 20px/24px var(--font-ui);letter-spacing:.06em;text-transform:uppercase;color:var(--text-2);}
 .dQuestion{margin-top:8px;font:500 30px/38px var(--font-cond);color:var(--text-1);}
 .dEventCtx{margin-top:6px;font:400 20px/26px var(--font-ui);color:var(--text-2);}
-.dHero{margin-top:20px;display:flex;align-items:baseline;gap:16px;}
-.dHero .big{font:600 64px/68px var(--font-cond);color:var(--text-1);font-variant-numeric:tabular-nums;transition:color .2s;}
-.dHero .big.tickUp{color:var(--yes);}
-.dHero .big.tickDown{color:var(--no);}
-.dHero .lbl{font:400 22px/28px var(--font-ui);color:var(--text-2);}
-.dHero .mov{font-size:22px;}
 .dHalted{margin-top:8px;font:400 22px/28px var(--font-ui);color:var(--text-2);}
+
+/* historical-probability sparkline (DESIGN.md §7.32) — secondary to the Market name above
+   and the YES/NO controls below; no chart-library dependency, just an inline SVG polyline
+   sized via viewBox to the 1920x1080 reference stage. No CSS animation/transition on the
+   line or dot — a live tick swaps their attributes directly (see updateDetailLive), so
+   nothing here would replay on a DOM node that already exists. */
+.dSpark{margin-top:20px;}
+.dSparkLbl{font:600 16px/20px var(--font-ui);letter-spacing:.08em;text-transform:uppercase;color:var(--text-3);margin-bottom:4px;}
+.dSparkSvg{display:block;width:100%;height:120px;}
+.dSparkLine{fill:none;stroke:var(--yes);stroke-width:3px;stroke-linejoin:round;stroke-linecap:round;}
+.dSparkDot{fill:var(--yes);stroke:var(--surface-panel);stroke-width:2px;}
 
 /* position card */
 .posCard{margin-top:24px;background:var(--surface-card);border:1.5px solid var(--stroke-hair);border-radius:16px;padding:20px 24px;}
@@ -247,12 +259,26 @@ html,body{height:100%;background:#000;overflow:hidden;font-family:var(--font-ui)
 .posCard .pnl.up{color:var(--yes);}
 .posCard .pnl.down{color:var(--no);}
 
-/* yes/no selector */
-.yesno{margin-top:28px;display:flex;gap:16px;}
-.ynBtn{flex:1;height:80px;border-radius:40px;border:2px solid var(--stroke-std);display:flex;align-items:center;justify-content:center;gap:12px;background:transparent;transition:background 150ms,border-color 150ms,transform 150ms;}
+/* yes/no selector — two-tier label per pill (rules #5-7): .ynMain keeps the original
+   "YES · 25%" weight/prominence unchanged; .ynSub adds the small muted multiplier beneath
+   it, sized/colored so it reads as clearly secondary to both the % above it and the pill's
+   own YES/NO side color. Height grew (80 -> 92px) to fit the second line without crowding —
+   the giant hero % this replaced was 64px tall on its own, so net vertical footprint on
+   Detail is smaller than before, not larger. */
+.yesno{margin-top:32px;display:flex;gap:16px;}
+.ynBtn{flex:1;min-height:92px;padding:10px 20px;border-radius:46px;border:2px solid var(--stroke-std);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;background:transparent;transition:background 150ms,border-color 150ms,transform 150ms;}
+.ynMain{display:flex;align-items:baseline;gap:10px;}
 .ynBtn .side{font:600 26px/32px var(--font-ui);letter-spacing:.02em;}
 .ynBtn .sep{font:600 26px/32px var(--font-ui);opacity:.5;margin:0 2px;}
 .ynBtn .px{font:600 28px/34px var(--font-ui);font-variant-numeric:tabular-nums;}
+.ynSub{display:flex;align-items:baseline;gap:8px;min-height:24px;}
+/* Muted regardless of side color — must not compete with YES/NO or the % (rule #5). Held at
+   the type scale's 20px floor (DESIGN.md §4.2) — secondary via weight/color, not size. */
+.ynSub .mult{font:500 20px/24px var(--font-ui);color:var(--text-3);font-variant-numeric:tabular-nums;transition:color .2s;}
+/* Movement badge attached to YES only (rule #7) — reuses the base .mov component (§7.7,
+   20/26/600) as-is rather than introducing a smaller size; "minor" here means inline and
+   attached to one pill, not a smaller typographic treatment than the rest of the system uses. */
+.ynMain .ynMovSlot{display:inline-flex;}
 .ynBtn.yes{color:var(--yes);}
 .ynBtn.no{color:var(--no);}
 .ynBtn.yes.selected{background:var(--yes-tint);border-color:var(--yes);}
@@ -561,6 +587,33 @@ for (const ev of EVENTS){
   }
 }
 const ALL_MARKETS = [...MARKET_INDEX.values()];
+// Market Detail sparkline (DESIGN.md §7.32) — a small simulated probability-history run per
+// Market, seeded once at load so the graph never opens as a flat single point or a straight
+// ramp. Prototype-only synthetic data (clearly not a claim about real Kalshi history), same
+// convention as the live ±1 tick simulation below. `HISTORY_MAX` bounds the rolling window a
+// live tick appends into so it never grows unbounded.
+const HISTORY_SEED_POINTS = 10;
+const HISTORY_MAX = 20;
+function seedHistory(mk){
+  const n = HISTORY_SEED_POINTS;
+  const target = mk.yes;
+  // Start a plausible distance from the current value, biased opposite `dir` so the run
+  // reads as "how we got here" — then random-walk back toward the current value with some
+  // natural wiggle rather than a straight line.
+  const bias = mk.dir==='down' ? -1 : 1;
+  let start = target - bias*(6+Math.floor(Math.random()*10));
+  start = Math.max(3, Math.min(97, start));
+  const hist = [start];
+  for (let i=1;i<n-1;i++){
+    const t = i/(n-1);
+    const base = start + (target-start)*t;
+    const noise = (Math.random()-0.5)*6;
+    hist.push(Math.max(2, Math.min(98, Math.round(base+noise))));
+  }
+  hist.push(target); // last point always matches the market's current live value exactly
+  return hist;
+}
+for (const mk of ALL_MARKETS) mk.history = seedHistory(mk);
 const byId = id => MARKET_INDEX.get(id);
 const eventOf = id => { const mk=byId(id); return mk && EVENTS.find(e=>e.id===mk.eventId); };
 // Display status for an Event row: a single-market Event mirrors its one market's live
@@ -684,10 +737,62 @@ function chipHTML(m, sm){
   if (m.status==='closed')    return `<span class="${c} closed">Closed</span>`;
   return '';
 }
+// Market Detail sparkline (DESIGN.md §7.32) — compact historical-probability line between
+// the Market name and the YES/NO controls. Pure functions of `m.history`: renderDetail's
+// initial mount and updateDetailLive's per-tick patch both call these, so the two paths can
+// never draw the line differently. viewBox matches the on-screen pixel size exactly (496 ==
+// #detail's inner content width; 120 sits in the spec's 100-140px band at the 1920x1080
+// reference) so no preserveAspectRatio distortion is needed.
+const SPARK_W = 496, SPARK_H = 120, SPARK_PAD_Y = 12;
+function sparkGeometry(history){
+  const hist = (history && history.length) ? history : [50];
+  const n = hist.length;
+  const min = Math.min(...hist), max = Math.max(...hist);
+  const range = Math.max(1, max-min); // flat history (all-equal) still draws a level line
+  const usableH = SPARK_H - SPARK_PAD_Y*2;
+  return hist.map((v,i)=>[
+    n>1 ? (i/(n-1))*SPARK_W : SPARK_W,
+    SPARK_PAD_Y + (1-(v-min)/range)*usableH
+  ]);
+}
+function sparkPointsAttr(pts){ return pts.map(p=>p[0].toFixed(1)+','+p[1].toFixed(1)).join(' '); }
+// Secondary to the Market name and YES/NO controls (rule: no giant hero, no second
+// standalone movement badge) — a minimal "GAME" context label, the line, and a small dot
+// marking the current value at the endpoint. No % text here; the YES/NO pills right below
+// already show the current price prominently, so this graph only communicates shape/motion.
+function sparkHTML(m){
+  const pts = sparkGeometry(m.history);
+  const last = pts[pts.length-1];
+  return `<div class="dSpark">
+    <div class="dSparkLbl">Game</div>
+    <svg class="dSparkSvg" viewBox="0 0 ${SPARK_W} ${SPARK_H}">
+      <polyline class="dSparkLine" id="dSparkLine" points="${sparkPointsAttr(pts)}"></polyline>
+      <circle class="dSparkDot" id="dSparkDot" cx="${last[0].toFixed(1)}" cy="${last[1].toFixed(1)}" r="4.5"></circle>
+    </svg>
+  </div>`;
+}
 function movHTML(m){
   if (!m.dir || !m.delta || m.status==='closed' || m.status==='suspended' || m.status==='settled') return '';
   const g = m.dir==='up' ? '▲' : '▼';
   return `<div class="mov ${m.dir}">${g} ${m.delta}</div>`;
+}
+// Market Detail's YES/NO control (rules #5-7): a two-tier label per pill — primary
+// "YES · 25%" line unchanged in weight/prominence, plus a small muted secondary multiplier
+// beneath it. Movement (m.dir/m.delta reflects the YES-side price move) is attached only to
+// the YES pill, inline and minor — "YES · 25% ▲2" — rather than reviving the old standalone
+// hero badge; Event-level (marRowHTML) remains the primary place for movement emphasis.
+// `id`/`focused` are only passed for focusable variants (browse-only, ready-not-addMode);
+// halted and addMode variants omit them, matching the pre-multiplier markup exactly.
+function ynBtnHTML(m, side, opts){
+  opts = opts || {};
+  const cents = side==='yes'? m.yes : m.no;
+  const cls = ['ynBtn', side, opts.selected?'selected':'', opts.focused?'focused':''].filter(Boolean).join(' ');
+  const idAttr = opts.id ? ` id="${opts.id}"` : '';
+  const movSlot = side==='yes' ? `<span class="ynMovSlot" id="ynYesMov">${movHTML(m)}</span>` : '';
+  return `<div class="${cls}"${idAttr}>
+    <div class="ynMain"><span class="side">${side==='yes'?'YES':'NO'}</span><span class="sep">·</span><span class="px">${cents}%</span>${movSlot}</div>
+    <div class="ynSub"><span class="mult">${multFor(cents)}</span></div>
+  </div>`;
 }
 // Positions belong to the account: invisible while signed out (AUTH.md §3, State 1)
 function positionFor(mId){ return S.auth==='ready' ? positions.find(p=>p.marketId===mId) : undefined; }
@@ -697,6 +802,22 @@ function tradeNumbers(m, side, amount){
   const cost = Math.round(contracts*cents)/100;
   const payout = contracts; // $1 per contract
   return {cents, contracts, cost, payout};
+}
+// Return multiplier — prototype display value only (rule #8-9 of the multiplier pass).
+// Each contract costs `cents` and pays out $1, so $1 risked at `cents` returns 100/cents
+// dollars: a straightforward payout-per-dollar reading of the current simulated price,
+// the same relationship tradeNumbers() already uses for cost/payout. This is NOT a claim
+// about Kalshi's real execution price, fees, spread, liquidity, or rounding behavior — see
+// PRODUCT_QUESTIONS.md #23. No fee of any kind is applied here.
+// Rounding rule (chosen, applied everywhere a multiplier is shown): round to 2 decimal
+// places, then drop a trailing zero in the hundredths place — 100/25 -> "4.00" -> "4.0x",
+// 100/40 -> "2.50" -> "2.5x", 100/64 -> "1.5625" -> "1.56" -> "1.56x" (kept, not a trailing
+// zero). Always at least one decimal place shown, never "4x" or "4.0000x".
+function multFor(cents){
+  if (!cents || cents<=0) return '—';
+  let s = (100/cents).toFixed(2);
+  if (s.endsWith('0')) s = s.slice(0,-1);
+  return s+'x';
 }
 function tradingRemainingMin(){
   if (!S.tradingUnlockExpiresAt) return 0;
@@ -977,10 +1098,13 @@ function scrollPositionsToFocus(){
 // on-screen. `prominent` (h2h) is used for exactly-two-Market Events (see CSS .marRow.h2h).
 function marRowHTML(mk, focused, prominent){
   const cls = ['marRow', prominent?'h2h':'', focused?'focused':''].filter(Boolean).join(' ');
+  // Reading order name -> bar -> multiplier -> probability (rule #1): the bar sits full-width
+  // beneath the name, and the multiplier sits immediately to the left of the % it explains —
+  // small/muted so it never competes with the % for attention (rule #3).
   return `<div class="${cls}" data-id="${mk.id}">
     <div class="top">
       <span class="name">${esc(mk.name)}</span>
-      <span class="pctWrap"><span class="pct">${mk.yes}%</span><span class="indicator" hidden></span></span>
+      <span class="pctWrap"><span class="mult">${multFor(mk.yes)}</span><span class="pct">${mk.yes}%</span><span class="indicator" hidden></span></span>
     </div>
     <div class="bar"><div class="barFill" style="width:${mk.yes}%"></div></div>
   </div>`;
@@ -1060,20 +1184,21 @@ function renderDetail(back){
       ${posHTML}
       <div class="disabledZone">
         <div class="yesno">
-          <div class="ynBtn yes"><span class="side">YES</span><span class="sep">·</span><span class="px">${m.yes}%</span></div>
-          <div class="ynBtn no"><span class="side">NO</span><span class="sep">·</span><span class="px">${m.no}%</span></div>
+          ${ynBtnHTML(m,'yes',{})}
+          ${ynBtnHTML(m,'no',{})}
         </div>
       </div>
       <div class="ctaWrap"><div class="btn btnSecondary ${d.focus==='back'?'focused':''}" id="backBtn">Back to markets</div></div>`;
   } else if (S.auth!=='ready'){
     // State 1 — browse-only. Prices fully visible; Yes/No focusable for comparison.
     // Amount and payout are omitted entirely (nothing to size yet), not just dimmed.
+    // The old giant "% chance" hero block above this control was removed (rule #5) — it was
+    // redundant with the YES/NO pills' own live percentages just below.
     bodyHTML = `
-      <div class="dHero"><span class="big" id="heroPct">${m.yes}%</span><span class="lbl">chance</span><span id="heroMovWrap">${movHTML(m)}</span></div>
       ${posHTML}
       <div class="yesno">
-        <div class="ynBtn yes ${d.focus==='yes'?'focused':''}" id="ynYes"><span class="side">YES</span><span class="sep">·</span><span class="px">${m.yes}%</span></div>
-        <div class="ynBtn no ${d.focus==='no'?'focused':''}" id="ynNo"><span class="side">NO</span><span class="sep">·</span><span class="px">${m.no}%</span></div>
+        ${ynBtnHTML(m,'yes',{focused:d.focus==='yes', id:'ynYes'})}
+        ${ynBtnHTML(m,'no',{focused:d.focus==='no', id:'ynNo'})}
       </div>
       <div class="ctaWrap"><div class="btn btnPrimary ${d.focus==='cta'?'focused':''}" id="ctaBtn">Sign in to trade</div></div>`;
   } else {
@@ -1095,15 +1220,17 @@ function renderDetail(back){
     }
     const yesnoHTML = d.addMode
       ? `<div class="yesno">
-           <div class="ynBtn yes ${sideSel==='yes'?'selected':''}"><span class="side">YES</span><span class="sep">·</span><span class="px">${m.yes}%</span></div>
-           <div class="ynBtn no ${sideSel==='no'?'selected':''}"><span class="side">NO</span><span class="sep">·</span><span class="px">${m.no}%</span></div>
+           ${ynBtnHTML(m,'yes',{selected:sideSel==='yes'})}
+           ${ynBtnHTML(m,'no',{selected:sideSel==='no'})}
          </div>`
       : `<div class="yesno">
-           <div class="ynBtn yes ${sideSel==='yes'?'selected':''} ${d.focus==='yes'?'focused':''}" id="ynYes"><span class="side">YES</span><span class="sep">·</span><span class="px">${m.yes}%</span></div>
-           <div class="ynBtn no ${sideSel==='no'?'selected':''} ${d.focus==='no'?'focused':''}" id="ynNo"><span class="side">NO</span><span class="sep">·</span><span class="px">${m.no}%</span></div>
+           ${ynBtnHTML(m,'yes',{selected:sideSel==='yes', focused:d.focus==='yes', id:'ynYes'})}
+           ${ynBtnHTML(m,'no',{selected:sideSel==='no', focused:d.focus==='no', id:'ynNo'})}
          </div>`;
+    // The old giant "% chance" hero block was removed (rule #5) — redundant with the
+    // YES/NO pills' own live percentages, and this state already has a selected side
+    // whose CTA/amount/payout carry the primary "what am I about to do" information.
     bodyHTML = `
-      <div class="dHero"><span class="big" id="heroPct">${m.yes}%</span><span class="lbl">chance</span><span id="heroMovWrap">${movHTML(m)}</span></div>
       ${posHTML}
       ${bannerHTML}
       ${yesnoHTML}
@@ -1128,6 +1255,7 @@ function renderDetail(back){
     <div class="dEyebrow"><span class="cat">${esc(m.cat)}</span>${statusChip}</div>
     ${ctxLine}
     <div class="dQuestion">${esc(m.name)}</div>
+    ${sparkHTML(m)}
     ${bodyHTML}
     <div class="dMeta"><span>${esc(m.vol)} vol</span><span>·</span><span>${esc(m.closes)}</span></div>
   </div>`;
@@ -1899,6 +2027,47 @@ function openDetail(m){
   S._anim='in';
   render();
 }
+/* ---------- detail focus/amount patch helpers ----------
+   Same Priority-0 anti-blink pattern as moveEventListFocus/movePositionsFocus above: a pure
+   focus move between two already-mounted Detail zones patches the existing DOM nodes' classes
+   in place instead of calling renderDetail(). Selecting a side (OK on yes/no), opening
+   Add/Sell, and opening Confirm all still call render() — those are genuine structural
+   changes (different CTA markup, a new stack frame), not focus moves, and are left untouched.
+   ---------------------------------------------------------- */
+const DETAIL_FOCUS_SEL = {yes:'#ynYes', no:'#ynNo', amount:'#amtField', cta:'#ctaBtn', posAdd:'#posAddBtn', posSell:'#posSellBtn'};
+function moveDetailFocus(newFocus){
+  const d = S.detail;
+  const newEl = $(DETAIL_FOCUS_SEL[newFocus]);
+  if (!newEl){ d.focus = newFocus; render(); return; }  // destination not mounted — fall back
+  const oldEl = $(DETAIL_FOCUS_SEL[d.focus]);
+  if (oldEl && oldEl!==newEl) oldEl.classList.remove('focused');
+  newEl.classList.add('focused');
+  d.focus = newFocus;
+}
+// Amount stepper (Left/Right on #amtField) patches #amtVal / #stepL / #stepR / #payoutVal in
+// place, reusing tradeNumbers() exactly as renderDetail/updateDetailLive already do. The one
+// case that still needs a full render(): stepping crosses the sufficient/insufficient-balance
+// boundary, which swaps the CTA's own HTML block (btnPrimary+payout vs btnSecondary+warnLine —
+// see renderDetail's `insufficient` branch) — a structural change no in-place patch can express,
+// so that case (only) falls back to render(), same scope cut updateDetailLive already documents
+// for a live tick crossing the same boundary.
+function moveDetailAmount(delta, m){
+  const d = S.detail;
+  const amtField = $('#amtField');
+  if (!amtField){ d.amtIdx += delta; render(); return; }  // not mounted — fall back
+  const oldInsufficient = d.side ? tradeNumbers(m, d.side, AMOUNTS[d.amtIdx]).cost > S.balance : false;
+  d.amtIdx += delta;
+  const amount = AMOUNTS[d.amtIdx];
+  const newInsufficient = d.side ? tradeNumbers(m, d.side, amount).cost > S.balance : false;
+  if (d.side && oldInsufficient !== newInsufficient){ render(); return; }
+  const amtVal = $('#amtVal'); if (amtVal) amtVal.textContent = `$${amount}`;
+  const stepL = $('#stepL'); if (stepL) stepL.classList.toggle('dim', d.amtIdx===0);
+  const stepR = $('#stepR'); if (stepR) stepR.classList.toggle('dim', d.amtIdx===AMOUNTS.length-1);
+  if (d.side){
+    const {payout} = tradeNumbers(m, d.side, amount);
+    const payEl = $('#payoutVal'); if (payEl) payEl.textContent = fmt$(payout);
+  }
+}
 /* ---------- detail keys ---------- */
 function detailKey(ok,back,dir){
   const d = S.detail, m = byId(d.mId);
@@ -1916,10 +2085,10 @@ function detailKey(ok,back,dir){
 
   // ---- Position card Add/Sell zone (above Yes/No) ----
   if (d.focus==='posAdd' || d.focus==='posSell'){
-    if (dir==='left'){ if(d.focus!=='posAdd'){d.focus='posAdd';render();} else bounce('#posAddBtn','x'); }
-    else if (dir==='right'){ if(d.focus!=='posSell'){d.focus='posSell';render();} else bounce('#posSellBtn','x'); }
+    if (dir==='left'){ if(d.focus!=='posAdd'){moveDetailFocus('posAdd');} else bounce('#posAddBtn','x'); }
+    else if (dir==='right'){ if(d.focus!=='posSell'){moveDetailFocus('posSell');} else bounce('#posSellBtn','x'); }
     else if (dir==='up'){ bounce(d.focus==='posAdd'?'#posAddBtn':'#posSellBtn','y'); }
-    else if (dir==='down'){ d.focus = d.addMode ? 'amount' : 'yes'; render(); }
+    else if (dir==='down'){ moveDetailFocus(d.addMode ? 'amount' : 'yes'); }
     else if (ok){
       // Trading-authorization is enforced once, at Confirm time (rule B) — not here.
       if (d.focus==='posAdd') startAddFlow(m, pos);
@@ -1931,13 +2100,13 @@ function detailKey(ok,back,dir){
   // State 1 — anonymous browse-only
   if (S.auth!=='ready'){
     if (d.focus==='yes'||d.focus==='no'){
-      if (dir==='left'){ if(d.focus!=='yes'){d.focus='yes';render();} else bounce('#ynYes','x'); }
-      else if (dir==='right'){ if(d.focus!=='no'){d.focus='no';render();} else bounce('#ynNo','x'); }
-      else if (dir==='down'){ d.focus='cta'; render(); }
-      else if (dir==='up'){ if(hasPosActions){ d.focus='posAdd'; render(); } else bounce(d.focus==='yes'?'#ynYes':'#ynNo','y'); }
+      if (dir==='left'){ if(d.focus!=='yes'){moveDetailFocus('yes');} else bounce('#ynYes','x'); }
+      else if (dir==='right'){ if(d.focus!=='no'){moveDetailFocus('no');} else bounce('#ynNo','x'); }
+      else if (dir==='down'){ moveDetailFocus('cta'); }
+      else if (dir==='up'){ if(hasPosActions){ moveDetailFocus('posAdd'); } else bounce(d.focus==='yes'?'#ynYes':'#ynNo','y'); }
       else if (ok) openSignIn({mId:m.id});
     } else {                       // cta
-      if (dir==='up'){ d.focus='yes'; render(); }
+      if (dir==='up'){ moveDetailFocus('yes'); }
       else if (dir) bounce('#ctaBtn', dir==='down'?'y':'x');
       else if (ok) openSignIn({mId:m.id});
     }
@@ -1953,12 +2122,12 @@ function detailKey(ok,back,dir){
   if (d.addMode){
     // side is already fixed from an existing position — never re-asked (BEHAVIOR.md §4.11)
     if (d.focus==='amount'){
-      if (dir==='left'){ if(d.amtIdx>0){d.amtIdx--; render(); pressGlyph('stepL');} else bounce('#amtField','x'); }
-      else if (dir==='right'){ if(d.amtIdx<AMOUNTS.length-1){d.amtIdx++; render(); pressGlyph('stepR');} else bounce('#amtField','x'); }
-      else if (dir==='up'){ if(hasPosActions){ d.focus='posAdd'; render(); } else bounce('#amtField','y'); }
-      else if (dir==='down'||ok){ d.focus='cta'; render(); }
+      if (dir==='left'){ if(d.amtIdx>0){ moveDetailAmount(-1, m); pressGlyph('stepL'); } else bounce('#amtField','x'); }
+      else if (dir==='right'){ if(d.amtIdx<AMOUNTS.length-1){ moveDetailAmount(1, m); pressGlyph('stepR'); } else bounce('#amtField','x'); }
+      else if (dir==='up'){ if(hasPosActions){ moveDetailFocus('posAdd'); } else bounce('#amtField','y'); }
+      else if (dir==='down'||ok){ moveDetailFocus('cta'); }
     } else { // cta
-      if (dir==='up'){ d.focus='amount'; render(); }
+      if (dir==='up'){ moveDetailFocus('amount'); }
       else if (dir==='left'||dir==='right'){ bounce('#ctaBtn','x'); }
       else if (dir==='down'){ bounce('#ctaBtn','y'); }
       else if (ok){
@@ -1970,14 +2139,16 @@ function detailKey(ok,back,dir){
   }
 
   if (d.focus==='yes'||d.focus==='no'){
-    if (dir==='left'){ if(d.focus!=='yes'){d.focus='yes';render();} else bounce('#ynYes','x'); }
-    else if (dir==='right'){ if(d.focus!=='no'){d.focus='no';render();} else bounce('#ynNo','x'); }
+    if (dir==='left'){ if(d.focus!=='yes'){moveDetailFocus('yes');} else bounce('#ynYes','x'); }
+    else if (dir==='right'){ if(d.focus!=='no'){moveDetailFocus('no');} else bounce('#ynNo','x'); }
     else if (dir==='down'){
-      if (d.side){ d.focus='amount'; render(); }
+      if (d.side){ moveDetailFocus('amount'); }
       else bounce(d.focus==='yes'?'#ynYes':'#ynNo','y');   // amount gated until a side is chosen
     }
-    else if (dir==='up'){ if(hasPosActions){ d.focus='posAdd'; render(); } else bounce(d.focus==='yes'?'#ynYes':'#ynNo','y'); }
+    else if (dir==='up'){ if(hasPosActions){ moveDetailFocus('posAdd'); } else bounce(d.focus==='yes'?'#ynYes':'#ynNo','y'); }
     else if (ok){
+      // Selecting a side is a structural change (un-gates amount/payout, changes CTA
+      // text/class) — not a pure focus move, so this keeps calling render(), same as before.
       d.side = d.focus;           // select side
       d.focus = 'amount';         // auto-advance
       render();
@@ -1985,19 +2156,19 @@ function detailKey(ok,back,dir){
   }
   else if (d.focus==='amount'){
     if (dir==='left'){
-      if (d.amtIdx>0){ d.amtIdx--; render(); pressGlyph('stepL'); } else bounce('#amtField','x');
+      if (d.amtIdx>0){ moveDetailAmount(-1, m); pressGlyph('stepL'); } else bounce('#amtField','x');
     }
     else if (dir==='right'){
-      if (d.amtIdx<AMOUNTS.length-1){ d.amtIdx++; render(); pressGlyph('stepR'); } else bounce('#amtField','x');
+      if (d.amtIdx<AMOUNTS.length-1){ moveDetailAmount(1, m); pressGlyph('stepR'); } else bounce('#amtField','x');
     }
-    else if (dir==='up'){ d.focus = d.side==='no'?'no':'yes'; render(); }
+    else if (dir==='up'){ moveDetailFocus(d.side==='no'?'no':'yes'); }
     else if (dir==='down'||ok){
-      if (d.side){ d.focus='cta'; render(); }
+      if (d.side){ moveDetailFocus('cta'); }
       else if (dir==='down'){ bounce('#amtField','y'); }  // CTA disabled → unfocusable
     }
   }
   else if (d.focus==='cta'){
-    if (dir==='up'){ d.focus='amount'; render(); }
+    if (dir==='up'){ moveDetailFocus('amount'); }
     else if (dir==='left'||dir==='right'){ bounce('#ctaBtn','x'); }
     else if (dir==='down'){ bounce('#ctaBtn','y'); }
     else if (ok){
@@ -2382,6 +2553,7 @@ function updateEventListRow(mk){
   if (!row) return null;
   const fill = row.querySelector('.barFill'); if (fill) fill.style.width = mk.yes+'%';
   const pctEl = row.querySelector('.pct'); if (pctEl) pctEl.textContent = mk.yes+'%';
+  const multEl = row.querySelector('.mult'); if (multEl) multEl.textContent = multFor(mk.yes);
   return row;
 }
 // Net percentage-point drift accumulated per Market since the movement badge was last
@@ -2445,24 +2617,38 @@ function updateDetailLive(m, move){
   // untouched. Keeps every visible price-dependent field on Market Detail synced to a
   // background tick (targeted consistency fix — see DESIGN.md/BEHAVIOR.md; architecture,
   // navigation, Trading PIN, Positions and execution behavior are unchanged by this).
-  const heroEl = $('#heroPct');
-  if (heroEl){
-    heroEl.textContent = `${m.yes}%`;
-    heroEl.classList.remove('tickUp','tickDown'); void heroEl.offsetWidth;
-    heroEl.classList.add(move>0?'tickUp':'tickDown');
-    setTimeout(()=>heroEl.classList.remove('tickUp','tickDown'),600);
+  // The old hero % block (rule #5) is gone — the YES/NO pills below are now the only place
+  // Detail shows the probability, so they're what a tick has to keep in sync.
+  // Movement badge next to YES's % (rule #7, "YES · 25% ▲2") — was previously left stale on
+  // the old hero badge; same fix, new home. Safe to fully replace: small, self-contained,
+  // non-focusable, not a focus target or animated container.
+  const movSlot = $('#ynYesMov');
+  if (movSlot) movSlot.innerHTML = movHTML(m);
+
+  // Sparkline — patch the existing <polyline>/<circle> attributes in place (never replace
+  // the <svg> node). Called only from this tick-driven path, never from focus-change
+  // handling, so moving focus between YES/NO (which re-renders Detail via its own existing,
+  // unrelated path) never routes through here and this never routes through render().
+  const sparkLine = $('#dSparkLine'), sparkDot = $('#dSparkDot');
+  if (sparkLine && sparkDot){
+    const pts = sparkGeometry(m.history);
+    const last = pts[pts.length-1];
+    sparkLine.setAttribute('points', sparkPointsAttr(pts));
+    sparkDot.setAttribute('cx', last[0].toFixed(1));
+    sparkDot.setAttribute('cy', last[1].toFixed(1));
   }
-  // Movement badge next to the hero % — was previously left stale (m.dir/m.delta change
-  // every tick but nothing repainted this span). Safe to fully replace: it's a small,
-  // self-contained, non-focusable badge, not a focus target or animated container.
-  const movWrap = $('#heroMovWrap');
-  if (movWrap) movWrap.innerHTML = movHTML(m);
 
   // Indicative price shown inside the YES/NO buttons (used in every auth/focus state).
   const yesPx = document.querySelector('#ynYes .px') || document.querySelector('.ynBtn.yes .px');
   const noPx  = document.querySelector('#ynNo .px')  || document.querySelector('.ynBtn.no .px');
   if (yesPx) yesPx.textContent = `${m.yes}%`;
   if (noPx)  noPx.textContent  = `${m.no}%`;
+
+  // Return multiplier inside each pill (rule #15) — same in-place patch as the price above.
+  const yesMult = document.querySelector('#ynYes .mult') || document.querySelector('.ynBtn.yes .mult');
+  const noMult  = document.querySelector('#ynNo .mult')  || document.querySelector('.ynBtn.no .mult');
+  if (yesMult) yesMult.textContent = multFor(m.yes);
+  if (noMult)  noMult.textContent  = multFor(m.no);
 
   const d = S.detail;
   if (d && d.side && S.auth==='ready'){
@@ -2522,6 +2708,11 @@ setInterval(()=>{
   m.yes=ny; m.no=Math.max(1,100-ny-(Math.random()>.5?1:0));
   m.dir = move>0?'up':'down';
   m.delta = Math.max(1, m.delta||0);
+  // Sparkline history — append this tick's new value, capped to a rolling window. Data-only;
+  // the actual redraw (if this Market's Detail happens to be mounted) is handled below by
+  // updateDetailLive's in-place SVG patch, same as every other price-dependent field there.
+  (m.history || (m.history=[])).push(ny);
+  if (m.history.length > HISTORY_MAX) m.history.shift();
   // update UI if visible — targeted, in-place updates only (see helpers above); never a
   // full render() for a background tick.
   if (S.mode!=='panel') return;
