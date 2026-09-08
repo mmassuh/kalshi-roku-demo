@@ -246,7 +246,10 @@ html,body{height:100%;background:#000;overflow:hidden;font-family:var(--font-ui)
    CARD_GRAPH_COLORS in Market order, and .marRow .rowDot (below) repeats the same
    color next to that Market's name so the legend never needs on-screen text. */
 .evCard .cardGraph{margin-top:14px;}
-.evCard .cardGraphSvg{display:block;width:100%;height:64px;}
+.evCard .cardGraphSvg{display:block;width:100%;height:112px;}
+.evCard .cardGraphGrid{stroke:var(--stroke-hair);stroke-width:1;stroke-dasharray:2 4;}
+.evCard .cardGraphAxisLabel{font:500 14px var(--font-ui);fill:var(--text-3);}
+.evCard .cardGraphAxisX{display:flex;justify-content:space-between;margin-top:6px;font:500 14px/1 var(--font-ui);color:var(--text-3);}
 .evCard .cardGraphLine{fill:none;stroke-width:2.5px;stroke-linejoin:round;stroke-linecap:round;}
 .evCard .cardGraphDot{stroke:var(--surface-card);stroke-width:1.5px;}
 /* Total Event volume -- same figure as the (previously unused-in-card) EVENTS[].vol
@@ -255,7 +258,7 @@ html,body{height:100%;background:#000;overflow:hidden;font-family:var(--font-ui)
 .evCard .cardVol{margin-top:8px;font:600 16px/20px var(--font-ui);color:var(--text-3);font-variant-numeric:tabular-nums;}
 .evCard .cardVol .volLbl{text-transform:uppercase;letter-spacing:.08em;margin-left:5px;}
 .evCard .cardDivider{margin-top:16px;height:1.5px;background:var(--stroke-hair);flex:0 0 auto;}
-.evCard .marketsList{margin-top:16px;display:flex;flex-direction:column;gap:6px;flex:1;justify-content:center;}
+.evCard .marketsList{margin-top:16px;display:flex;flex-direction:column;gap:6px;flex:1;justify-content:flex-start;}
 .evCard .posIndicator{margin-top:18px;text-align:center;font:600 18px/1 var(--font-ui);letter-spacing:.04em;color:var(--text-3);font-variant-numeric:tabular-nums;flex:0 0 auto;}
 /* Non-focusable section boundary between "related to this game" and "trending" groups —
    the horizontal equivalent of .groupLabel in the vertical list (same idea, same rule:
@@ -1018,7 +1021,11 @@ function sparkHTML(m){
 // discrete historical bars, dots, or server-rendered image for the real Roku
 // SceneGraph build -- this is a prototype web-SVG visualization, not an approved Roku
 // implementation.
-const CARD_GRAPH_W = 348, CARD_GRAPH_H = 64, CARD_GRAPH_PAD_Y = 6;
+const CARD_GRAPH_W = 300, CARD_GRAPH_H = 112, CARD_GRAPH_PAD_Y = 10;
+// Reserved strip on the right of the plot for the %-gridline labels (kalshi.com's
+// real event chart shows dashed gridlines + a %-axis; CARD_GRAPH_W is the plotted
+// data width, this is the extra viewBox width the axis labels live in).
+const CARD_GRAPH_LABEL_W = 48;
 // Ordered palette reused from existing design tokens (brand/yes, info, warn, attn, no)
 // rather than one-off hex values -- ties every card graph back to the same system.
 const CARD_GRAPH_COLORS = ['#28CC95','#408FFF','#FFE14D','#FF9500','#FF4D6A'];
@@ -1038,9 +1045,21 @@ function cardGraphHTML(mks){
     const color = CARD_GRAPH_COLORS[i % CARD_GRAPH_COLORS.length];
     return {mId:mk.id, color, ptsAttr:sparkPointsAttr(pts), lastX:last[0].toFixed(1), lastY:last[1].toFixed(1)};
   });
+  // %-axis gridlines (kalshi.com convention) -- three light dashed reference lines with
+  // their value labeled in the reserved CARD_GRAPH_LABEL_W strip, same 0-100% shared
+  // scale the lines themselves are plotted on (see CARD_GRAPH_COLORS comment above).
+  const usableH = CARD_GRAPH_H - CARD_GRAPH_PAD_Y*2;
+  const gridHTML = [75,50,25].map(v=>{
+    const y = (CARD_GRAPH_PAD_Y + (1-(v/100))*usableH).toFixed(1);
+    return `<line class="cardGraphGrid" x1="0" y1="${y}" x2="${CARD_GRAPH_W}" y2="${y}"></line>`
+         + `<text class="cardGraphAxisLabel" x="${CARD_GRAPH_W+10}" y="${y}" dominant-baseline="middle">${v}%</text>`;
+  }).join('');
   const polylines = lines.map(l=>`<polyline class="cardGraphLine" data-mid="${l.mId}" points="${l.ptsAttr}" style="stroke:${l.color}"></polyline>`).join('');
   const dots = lines.map(l=>`<circle class="cardGraphDot" data-mid="${l.mId}" cx="${l.lastX}" cy="${l.lastY}" r="3.5" style="fill:${l.color}"></circle>`).join('');
-  return `<div class="cardGraph"><svg class="cardGraphSvg" viewBox="0 0 ${CARD_GRAPH_W} ${CARD_GRAPH_H}">${polylines}${dots}</svg></div>`;
+  return `<div class="cardGraph">
+    <svg class="cardGraphSvg" viewBox="0 0 ${CARD_GRAPH_W+CARD_GRAPH_LABEL_W} ${CARD_GRAPH_H}">${gridHTML}${polylines}${dots}</svg>
+    <div class="cardGraphAxisX"><span>Open</span><span>Now</span></div>
+  </div>`;
 }
 // Live-tick patch for one Market's line inside whichever card currently holds it --
 // same in-place-SVG-attribute-patch discipline as updateDetailLive's dSparkLine/dSparkDot
