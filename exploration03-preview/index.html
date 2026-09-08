@@ -230,9 +230,9 @@ html,body{height:100%;background:#000;overflow:hidden;font-family:var(--font-ui)
    Left/Right moves the focused card; Up/Down moves the focused Market row inside it;
    OK opens Market Detail on that Market directly (openDetail, unchanged).
    ============================================================ */
-#cardWrap{flex:1;position:relative;overflow:hidden;padding:20px 40px 8px;display:flex;flex-direction:column;}
+#cardWrap{flex:1;position:relative;overflow:hidden;padding:20px 40px 4px;display:flex;flex-direction:column;}
 #cardTrack{flex:1;display:flex;align-items:stretch;gap:20px;transition:transform 250ms cubic-bezier(.2,0,0,1);will-change:transform;}
-.evCard{flex:0 0 400px;width:400px;background:var(--surface-card);border:1.5px solid var(--stroke-hair);border-radius:20px;padding:26px 26px 22px;display:flex;flex-direction:column;transition:background 150ms,border-color 150ms;}
+.evCard{flex:0 0 400px;width:400px;background:var(--surface-card);border:1.5px solid var(--stroke-hair);border-radius:20px;padding:26px 26px 6px;display:flex;flex-direction:column;transition:background 150ms,border-color 150ms;}
 /* "you are here" affordance for the whole card — deliberately NOT the focus ring; the
    ring (reused unmodified from .marRow.focused/.mrow.focused) stays on the one real focus
    target, the Market row inside. This is a quieter, lower-emphasis cue only. */
@@ -263,7 +263,7 @@ html,body{height:100%;background:#000;overflow:hidden;font-family:var(--font-ui)
    prototype -- boundary-bounce is the only edge feedback). overflow:hidden here is
    the same flexbox-shrink fix as overflow:auto was, minus the native scrollbar auto
    can paint on some browsers/OS settings even when nothing actually needs to scroll. */
-.evCard .posIndicator{margin-top:10px;text-align:center;font:600 18px/1 var(--font-ui);letter-spacing:.04em;color:var(--text-3);font-variant-numeric:tabular-nums;flex:0 0 auto;}
+.evCard .posIndicator{margin-top:6px;text-align:center;font:600 18px/1 var(--font-ui);letter-spacing:.04em;color:var(--text-3);font-variant-numeric:tabular-nums;flex:0 0 auto;}
 /* Non-focusable section boundary between "related to this game" and "trending" groups —
    the horizontal equivalent of .groupLabel in the vertical list (same idea, same rule:
    skipped entirely by Left/Right, never a card the D-pad can land on). */
