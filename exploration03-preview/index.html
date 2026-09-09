@@ -109,7 +109,6 @@ html,body{height:100%;background:#000;overflow:hidden;font-family:var(--font-ui)
 #pHeader{flex:0 0 96px;display:flex;align-items:center;justify-content:space-between;padding:0 40px;border-bottom:1.5px solid var(--stroke-hair);}
 #pHeader .brandmark{display:flex;align-items:center;gap:12px;color:var(--brand);font:700 34px/1 var(--font-ui);letter-spacing:-.01em;}
 #pHeader .backTitle{display:flex;align-items:center;gap:14px;color:var(--text-1);font:600 28px/1 var(--font-ui);border-radius:8px;padding:4px 8px;margin:-4px -8px;}
-#pHeader .backTitle .chev{color:var(--text-3);font-size:30px;}
 /* Focusable on detail/eventList/positions/sell/account — the internal "one level back"
    control now that the system/Roku Back button always closes the whole panel (BEHAVIOR.md
    §7). Same focus-ring treatment as every other header chip (.authStatus.focused etc). */
@@ -1231,7 +1230,7 @@ function headerOrder(){
   return order;
 }
 function headerElId(id){ return id==='auth'?'#authChip':id==='positions'?'#posChip':'#acctChip'; }
-// Whether the header "‹ Back" chevron currently has focus, per the sentinel each content
+// Whether the header back-to-<Destination> label currently has focus, per the sentinel each content
 // screen's own focus state uses for it (BEHAVIOR.md §7) — kept consistent with how each
 // screen already tracks focus rather than a separate parallel flag: detail reuses its
 // existing d.focus field with a 'chevron' value, eventList/positions reuse their row-index
@@ -1268,25 +1267,29 @@ function renderHeader(){
   const authHTML = authStatusHTML(hdrFocus);
   const posChipHTML = positionsChipHTML(hdrFocus);
   let left;
-  // Screens with a real internal-back chevron get id="backChevron" + a state-driven
+  // Screens with a real internal-back control get id="backChevron" + a state-driven
   // .focused class — detail/eventList/positions/sell/account (rule: content screens the
   // user actually drills through/manages, BEHAVIOR.md §7). confirm/result/gate reuse the
-  // same "‹ Markets"/"‹ Positions" label purely as a breadcrumb — they're transaction
+  // same "Markets"/"Positions" label purely as a breadcrumb — they're transaction
   // overlays, not drillable content, so their label is never a focus target (no id, no
   // chevronFocused() check — see the Back-behavior report for why each was decided this way).
+  // No back-arrow icon is ever rendered here (Navigation Rule, 2026-09-09): the Roku/System
+  // Back button is the only control that means "go back," and it always closes the whole
+  // panel, so internal one-level-up controls show only a plain named destination (Kalshi,
+  // Positions, Account, Markets) with no chevron glyph that could be mistaken for it.
   if (['detail','sell','eventList'].includes(top)){
     const backLbl = S.stack.includes('positions') ? 'Positions' : 'Markets';
-    left = `<div class="backTitle${chevronFocused()?' focused':''}" id="backChevron"><span class="chev">‹</span>${backLbl}</div>`;
+    left = `<div class="backTitle${chevronFocused()?' focused':''}" id="backChevron">${backLbl}</div>`;
   } else if (['confirm','result'].includes(top)){
     const backLbl = S.stack.includes('positions') ? 'Positions' : 'Markets';
-    left = `<div class="backTitle"><span class="chev">‹</span>${backLbl}</div>`;
+    left = `<div class="backTitle">${backLbl}</div>`;
   } else if (top==='account'){
-    left = `<div class="backTitle${chevronFocused()?' focused':''}" id="backChevron"><span class="chev">‹</span>Account</div>`;
+    left = `<div class="backTitle${chevronFocused()?' focused':''}" id="backChevron">Account</div>`;
   } else if (top==='positions'){
-    left = `<div class="backTitle${chevronFocused()?' focused':''}" id="backChevron"><span class="chev">‹</span>Positions</div>`;
+    left = `<div class="backTitle${chevronFocused()?' focused':''}" id="backChevron">Positions</div>`;
   } else if (top==='gate'){
     const under = S.stack[S.stack.length-2];
-    left = `<div class="backTitle"><span class="chev">‹</span>${under==='account'?'Account':'Markets'}</div>`;
+    left = `<div class="backTitle">${under==='account'?'Account':'Markets'}</div>`;
   } else {
     left = `<div class="brandmark">Kalshi</div>`;
   }
