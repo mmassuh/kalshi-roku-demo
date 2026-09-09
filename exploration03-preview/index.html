@@ -153,10 +153,13 @@ html,body{height:100%;background:#000;overflow:hidden;font-family:var(--font-ui)
 /* Vertical-list group label (still used by #listWrap/.mrow consumers, e.g. Positions) —
    small-label type treatment matching the header's balance label (TV/Label scale), not a
    new heading. Non-focusable: only .mrow rows are ever a Down/Up stop.
-   NOTE (exploration03): the Live Game tab's own "RELATED TO.../TRENDING IN..." group
-   boundary moved to the new horizontal card slider's .groupDividerH (see below) — this
-   .groupLabel class is unused by renderList now but left defined/unmodified since other
-   .mrow-based screens (e.g. Positions) still share this block. */
+   NOTE (exploration03): the Live Game tab's own "RELATED TO.../TRENDING IN..." context was
+   a persistent vertical rail (.groupDividerH) in the horizontal card slider; it was
+   removed outright (redundant with the Live Game tab + BUF vs HOU broadcast + each Event
+   Card's own context label) rather than replaced with another vertical label — see the
+   removal note by #cardDots's .grpStart rule for how that transition is now communicated
+   instead. .groupLabel itself is unused by renderList now but left defined/unmodified
+   since other .mrow-based screens (e.g. Positions) still share this block. */
 .groupLabel{padding:20px 12px 10px;font:600 20px/24px var(--font-ui);letter-spacing:.06em;color:var(--text-3);text-transform:uppercase;}
 #listInner>.groupLabel:first-child{padding-top:2px;}
 .mrow{position:relative;height:104px;display:flex;align-items:center;gap:16px;border-radius:16px;padding:0 12px;transition:background 150ms,transform 150ms;}
@@ -265,11 +268,14 @@ html,body{height:100%;background:#000;overflow:hidden;font-family:var(--font-ui)
    the same flexbox-shrink fix as overflow:auto was, minus the native scrollbar auto
    can paint on some browsers/OS settings even when nothing actually needs to scroll. */
 .evCard .posIndicator{margin-top:6px;text-align:center;font:600 18px/1 var(--font-ui);letter-spacing:.04em;color:var(--text-3);font-variant-numeric:tabular-nums;flex:0 0 auto;}
-/* Non-focusable section boundary between "related to this game" and "trending" groups —
-   the horizontal equivalent of .groupLabel in the vertical list (same idea, same rule:
-   skipped entirely by Left/Right, never a card the D-pad can land on). */
-.groupDividerH{flex:0 0 56px;display:flex;align-items:center;justify-content:center;}
-.groupDividerH .lbl{writing-mode:vertical-rl;transform:rotate(180deg);font:600 18px/1 var(--font-ui);letter-spacing:.14em;text-transform:uppercase;color:var(--text-3);white-space:nowrap;}
+/* .groupDividerH (the persistent vertical "RELATED TO BUF vs HOU"/"TRENDING IN NFL" rail)
+   was removed outright, not replaced with another vertical label or side rail: that
+   context is already carried by the Live Game tab, the BUF vs HOU broadcast, and each
+   Event Card's own context label, so the rail was redundant and just ate 56px from the
+   card slider on every render. If the game tab ever mixes 'related' and 'trending' Events
+   again, that boundary belongs in the horizontal system instead — #cardDots .dot.grpStart
+   (below) already exists for exactly this: a small gap in the dot strip marking where the
+   group changes, with no persistent text anywhere. */
 /* Subtle directional affordances at the panel edges — decorative only (never focusable,
    never a click target, same spirit as .mrow .chev), shown only on the side more cards
    actually exist so they never promise content that isn't there. */
@@ -1334,22 +1340,17 @@ function renderList(back){
     // cardHTML/moveCardFocus/moveMarketRowFocus below and EXPLORATION03.md.
     const evs = visibleEvents();
     const total = evs.length;
-    // `.groupDividerH` ("RELATED TO..." / "TRENDING IN...") is now dormant: since the
-    // 2026-09-08 tab restructure (see EXPLORATION03.md "Corrections") every Event's
-    // `grp` field is either 'related' (the whole 'game' tab, now a single flat group) or
-    // absent ('other'/'trend' tabs), so `ev.grp!==lastGrp` never fires a second time and
-    // no divider ever renders. Left in place, unmodified, rather than deleted, in case a
-    // future pass wants in-strip sub-grouping again within one tab; harmless either way
-    // since moveCardFocus's `.evCard` query never counts divider elements as cards.
+    // The old persistent vertical rail here ("RELATED TO BUF vs HOU" / "TRENDING IN NFL")
+    // was removed: that context is redundant with the Live Game tab, the BUF vs HOU
+    // broadcast, and each Event Card's own context label. It is NOT replaced with another
+    // vertical label or side rail. A related->trending transition within one tab's card
+    // strip (none currently in the data — every 'game' tab Event is grp:'related', see
+    // EXPLORATION03.md "Corrections") is communicated purely in the horizontal system via
+    // #cardDots .dot.grpStart below (a small gap in the dot strip, no text) rather than a
+    // vertical label; the reclaimed 56px goes straight back to the card slider itself.
     const isGameTab = TABS[S.tab].id === 'game';
-    let lastGrp = null;
     let cardsHTML = '', dotsHTML = '';
     evs.forEach((ev,i)=>{
-      if (isGameTab && ev.grp && ev.grp!==lastGrp){
-        const label = ev.grp==='related' ? 'RELATED TO BUF vs HOU' : 'TRENDING IN NFL';
-        cardsHTML += `<div class="groupDividerH"><span class="lbl">${label}</span></div>`;
-        lastGrp = ev.grp;
-      }
       const active = S.listZone==='rows' && i===S.rowIdx;
       cardsHTML += cardHTML(ev, i, total, active);
       const grpStart = isGameTab && ev.grp==='trending' && i>0 && evs[i-1].grp==='related';
