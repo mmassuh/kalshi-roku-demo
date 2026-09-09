@@ -528,6 +528,21 @@ html,body{height:100%;background:#000;overflow:hidden;font-family:var(--font-ui)
 .authStatus.secondary{color:var(--text-2);}
 .authStatus.warn{color:var(--warn);}
 .authStatus.focused{outline:4px solid var(--focus-ring);outline-offset:3px;background:var(--surface-raised);}
+/* AuthStatus toggle-switch variant (header trading-authorization control) — Locked/Unlocked
+   is a real on/off switch, not just an icon swap: OFF/neutral = locked, ON/brand-green =
+   unlocked (time-boxed or "this game"). Always focusable while signed in (see headerOrder)
+   — OK never toggles it directly, it opens the standalone Trading Authorization gate
+   (openGateStandalone), which is itself now state-aware: see gateManageBodyHTML for the
+   "change policy"/"lock trading now" screen it shows once already unlocked. */
+.authStatus.toggleChip{color:var(--text-2);}
+.authStatus.toggleChip.on{color:var(--text-1);}
+.authStatus.toggleChip .swTrack{position:relative;width:44px;height:24px;border-radius:12px;background:var(--fill-ctl);border:1.5px solid var(--stroke-std);flex:0 0 44px;transition:background 150ms,border-color 150ms;}
+.authStatus.toggleChip .swKnob{position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:var(--text-3);transition:transform 150ms,background 150ms;}
+.authStatus.toggleChip.on .swTrack{background:var(--brand);border-color:var(--brand);}
+.authStatus.toggleChip.on .swKnob{transform:translateX(22px);background:#08221A;}
+.authStatus.toggleChip.expiring .swKnob{background:var(--warn);}
+.authStatus.toggleChip .swLabel{white-space:nowrap;}
+.authStatus.toggleChip.on .swLabel{font-weight:600;}
 
 /* Position card Add/Sell row — DESIGN.md §7.13 */
 .posCard .actions{margin-top:16px;display:flex;gap:16px;}
@@ -882,6 +897,15 @@ const TRADING_POLICIES = [
   {id:'1h',    label:'1 hour',     minutes:60},
   {id:'game',  label:'For this game', mode:'event'},
 ];
+// Shown instead of the PIN pad when the standalone gate opens while trading is ALREADY
+// unlocked (header toggle, now focusable in both states) — re-entering the PIN would be
+// pointless since nothing needs authorizing yet; this offers the two things that make
+// sense from here: pick a different policy, or lock immediately (no PIN needed to lock,
+// matching the Account screen's existing direct-lock rule).
+const GATE_MANAGE_OPTS = [
+  {id:'policy', label:'Change policy'},
+  {id:'lock',   label:'Lock trading now'},
+];
 // Trading PIN keypad layout (rule A) — a D-pad-navigable digit grid, distinct from the old
 // shared-device PIN gate's rotary digit slots (that mechanic is reused only as a *visual*
 // reference for the masked-slot display, per this pass's brief).
@@ -1180,32 +1204,36 @@ function applyPolicyUnlock(){
 function authStatusHTML(hdrFocus){
   if (S.auth!=='ready') return ''; // no authorization concept before an account is linked (AUTH.md §3, State 1-2)
   const locked = tradingLockedHeader();
-  let text, cls;
+  let text;
   if (locked){
-    text='Trading locked'; cls='tertiary';
+    text = 'Trading locked';
   } else if (S.tradingUnlockMode==='event'){
-    text='Unlocked · This game'; cls='secondary';
+    text = 'Trading · This game';
   } else {
     const mins = tradingRemainingMin();
     const label = mins>60 ? `${Math.floor(mins/60)}h ${mins%60}m` : `${mins} min`;
-    text = `Unlocked · ${label}`;
-    cls = tradingExpiringSoon() ? 'warn' : 'secondary';
+    text = `Trading · ${label}`;
   }
-  const glyph = locked ? PADLOCK_CLOSED : PADLOCK_OPEN;
-  const focused = locked && hdrFocus && S.headerFocus==='auth';
-  return `<div class="authStatus ${cls} ${focused?'focused':''}" id="authChip">${glyph}<span>${text}</span></div>`;
+  const on = !locked;
+  const expiring = on && S.tradingUnlockMode==='time' && tradingExpiringSoon();
+  // Focusable whenever signed in, locked or not (see headerOrder) — OK always opens the
+  // gate/manage modal; it never toggles the switch directly.
+  const focused = hdrFocus && S.headerFocus==='auth';
+  return `<div class="authStatus toggleChip ${on?'on':'off'} ${expiring?'expiring':''} ${focused?'focused':''}" id="authChip">
+    <span class="swTrack"><span class="swKnob"></span></span><span class="swLabel">${text}</span></div>`;
 }
 function positionsChipHTML(hdrFocus){
   const count = S.auth==='ready' ? positions.filter(p=>!p.settled).length : 0;
   const focused = hdrFocus && S.headerFocus==='positions';
   return `<div class="authStatus secondary ${focused?'focused':''}" id="posChip">${POSITIONS_GLYPH}<span>Positions · ${count}</span></div>`;
 }
-// Header focus order, left to right: auth (only when it's actually actionable), Positions,
-// Balance/Account. Recomputed each time since "auth" can drop out of the order mid-session
-// (e.g. it just unlocked) — see listKey's header zone.
+// Header focus order, left to right: auth, Positions, Balance/Account. The trading-auth
+// toggle now stays in the order whether locked or unlocked — it's always a real control,
+// OK opens the gate/manage modal either way (see authStatusHTML/openGateStandalone) — so
+// unlocking no longer drops it out of D-pad reach the way it used to.
 function headerOrder(){
   const order=[];
-  if (S.auth==='ready' && tradingLockedHeader()) order.push('auth');
+  if (S.auth==='ready') order.push('auth');
   order.push('positions');
   order.push('balance');
   return order;
@@ -1930,6 +1958,17 @@ function gatePolicyBodyHTML(g){
     ${optsHTML}
     <div class="btn btnSecondary ${g.onCancel?'focused':''}" id="gateCancel" style="margin-top:16px;">Cancel</div>`;
 }
+// Manage screen (see GATE_MANAGE_OPTS) — what the standalone gate opens to instead of the
+// PIN pad when trading is already unlocked; re-entering the PIN there would authorize
+// nothing new.
+function gateManageBodyHTML(g){
+  const statusLine = S.tradingUnlockMode==='event' ? 'Unlocked · This game' : `Unlocked · ${tradingRemainingMin()} min`;
+  const optsHTML = GATE_MANAGE_OPTS.map((o,i)=>`<div class="policyOpt ${(!g.onCancel && i===g.focusIdx)?'focused':''}">${o.label}</div>`).join('');
+  return `<h2>Trading authorization</h2>
+    <p style="margin-top:12px;font:400 24px/32px var(--font-ui);color:var(--text-2);">${statusLine}</p>
+    ${optsHTML}
+    <div class="btn btnSecondary ${g.onCancel?'focused':''}" id="gateCancel" style="margin-top:16px;">Cancel</div>`;
+}
 function gatePinBodyHTML(g){
   const slots = [0,1,2,3].map(i=>{
     const filled = g.digits[i]!==undefined;
@@ -2043,21 +2082,52 @@ function gateKey(ok,back,dir){
 }
 /* ---- gate #2: standalone screen, opened proactively (header chip / Account) ---- */
 function openGateStandalone(ctx){
-  S.gate = !S.tradingPolicy
-    ? {step:'policy', opts: policyOptsFor(ctx), focusIdx:0, standalone:true, returnTrigger:ctx.trigger}
-    : {step:'pin', digits:[], focusR:0, focusC:1, error:false, standalone:true, returnTrigger:ctx.trigger};
+  S.gate = (S.tradingPolicy && !tradingLockedHeader())
+    ? {step:'manage', focusIdx:0, standalone:true, returnTrigger:ctx.trigger}
+    : !S.tradingPolicy
+      ? {step:'policy', opts: policyOptsFor(ctx), focusIdx:0, standalone:true, returnTrigger:ctx.trigger}
+      : {step:'pin', digits:[], focusR:0, focusC:1, error:false, standalone:true, returnTrigger:ctx.trigger};
   S.stack.push('gate');
   S._anim='in';
   render();
 }
 function renderGate(){
   const g = S.gate;
-  const body = g.step==='policy' ? gatePolicyBodyHTML(g) : gatePinBodyHTML(g);
+  const body = g.step==='policy' ? gatePolicyBodyHTML(g)
+             : g.step==='manage' ? gateManageBodyHTML(g)
+             : gatePinBodyHTML(g);
   renderOverlayScreen('gateOverlay', 'dialog', body,
     ()=>{ if (g.returnTrigger==='account') renderAccount(); else renderList(); });
 }
 function gateStandaloneKey(ok,back,dir){
   const g = S.gate;
+  // Manage screen (see GATE_MANAGE_OPTS) — reached instead of the PIN pad when trading is
+  // already unlocked. Same one-level-back rule as every other gate step: System Back
+  // always closes the whole panel; #gateCancel (g.onCancel) is the only internal way out.
+  if (g.step==='manage'){
+    if (back){ closePanel(); return; }
+    if (g.onCancel){
+      if (dir==='up'){ g.onCancel=false; render(); return; }
+      if (dir==='down'||dir==='left'||dir==='right'){ bounce('#gateCancel', dir==='down'?'y':'x'); return; }
+      if (ok){ S.stack.pop(); S.gate=null; render(); return; }
+      return;
+    }
+    if (dir==='up'){ if(g.focusIdx>0){g.focusIdx--; render();} else bounce('.policyOpt.focused','y'); return; }
+    if (dir==='down'){ if(g.focusIdx<GATE_MANAGE_OPTS.length-1){g.focusIdx++; render();} else { g.onCancel=true; render(); } return; }
+    if (dir==='left'||dir==='right'){ bounce('.policyOpt.focused','x'); return; }
+    if (ok){
+      if (GATE_MANAGE_OPTS[g.focusIdx].id==='policy'){
+        S.gate = {step:'policy', opts: policyOptsFor({}), focusIdx:0, standalone:true, returnTrigger:g.returnTrigger};
+      } else {
+        // Lock trading now: revoke immediately, no PIN needed (only unlocking needs one —
+        // same rule the Account screen's direct-lock branch already follows).
+        S.tradingUnlockMode=null; S.tradingUnlockExpiresAt=null; S.tradingUnlockDurationMs=null;
+        S.stack.pop(); S.gate=null;
+      }
+      render();
+    }
+    return;
+  }
   // System Back always closes the whole panel (BEHAVIOR.md §7) at every step of this
   // flow — the #gateCancel button (g.onCancel, below) is the only internal-navigation
   // way to step back to policy / abandon the gate entirely now.
