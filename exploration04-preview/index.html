@@ -1,8 +1,20 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<style>html:not(.e03-unlocked) body{visibility:hidden}</style>
+<script>
+(function(){
+  try {
+    if (sessionStorage.getItem('e03gate') === '1') {
+      document.documentElement.classList.add('e03-unlocked');
+    }
+  } catch(e){}
+})();
+</script>
+
+
 <meta charset="UTF-8">
-<title>Kalshi · Roku Prototype — exploration04</title>
+<title>Kalshi · Roku Prototype — exploration03</title>
 <style>
 /* ============================================================
    KALSHI ROKU PROTOTYPE — all values from DESIGN.md (TV/* tokens)
@@ -484,6 +496,17 @@ html,body{height:100%;background:#000;overflow:hidden;font-family:var(--font-ui)
 .banner{margin-top:20px;border-radius:8px;background:rgba(255,225,77,.16);border-left:3px solid var(--warn);padding:14px 16px;font:400 22px/28px var(--font-ui);color:var(--text-1);opacity:1;transition:opacity .6s;}
 .banner.fade{opacity:0;}
 
+/* Insufficient-balance state — a status, not an action, so it reuses the app's existing
+   warning-banner treatment (tint fill + left border, same as .banner above) instead of
+   button chrome. Title carries the emphasis; the recovery copy underneath is intentionally
+   smaller/lighter so it reads as subordinate. */
+/* Correction pass: this is informational recovery guidance, not an action — it never
+   receives D-pad focus (see detailKey's insufficient-balance gate), so it carries no
+   .focused treatment. */
+.insufficientBox{margin-top:16px;border-radius:8px;background:rgba(255,225,77,.16);border-left:3px solid var(--warn);padding:14px 16px;}
+.insufficientTitle{font:700 26px/32px var(--font-ui);color:var(--warn);}
+.insufficientSub{margin-top:4px;font:400 20px/26px var(--font-ui);color:var(--warn);opacity:.8;}
+
 .ctaWrap{margin-top:24px;}
 .dMeta{margin-top:20px;font:400 20px/26px var(--font-ui);color:var(--text-3);display:flex;gap:16px;}
 
@@ -662,51 +685,60 @@ html,body{height:100%;background:#000;overflow:hidden;font-family:var(--font-ui)
 .resultActions{display:flex;flex-direction:column;gap:12px;width:100%;margin-top:8px;}
 .successBody .sub{font-size:20px;color:var(--text-3);}
 </style>
-<style id="gatePwStyle">
-  body.gate-locked > *:not(#gatePwOverlay) { display: none !important; }
-  #gatePwOverlay { position: fixed; inset: 0; background: #0b0f0c; color: #eafff2; display: flex;
-    align-items: center; justify-content: center; font-family: -apple-system, sans-serif; z-index: 999999; }
-  #gatePwOverlay .box { background: #131a15; border: 1px solid #2a3a2f; border-radius: 12px; padding: 32px 36px; width: 320px; }
-  #gatePwOverlay h2 { margin: 0 0 16px; font-size: 18px; }
-  #gatePwOverlay input { width: 100%; box-sizing: border-box; padding: 10px 12px; border-radius: 8px;
-    border: 1px solid #2a3a2f; background: #0b0f0c; color: #eafff2; font-size: 15px; margin-bottom: 12px; }
-  #gatePwOverlay button { width: 100%; padding: 10px 12px; border-radius: 8px; border: none;
-    background: #22c55e; color: #05170c; font-weight: 600; font-size: 15px; cursor: pointer; }
-  #gatePwOverlay .err { color: #ff8a8a; font-size: 13px; margin: -4px 0 12px; display: none; }
-</style>
-<script>
-  (function(){
-    var GATE_PW = "UXTeam";
-    if (sessionStorage.getItem('gateOk') === '1') return;
-    document.documentElement.classList.add('gate-pending');
-    document.addEventListener('DOMContentLoaded', function(){
-      document.body.classList.add('gate-locked');
-      var overlay = document.createElement('div');
-      overlay.id = 'gatePwOverlay';
-      overlay.innerHTML = '<div class="box"><h2>Enter password</h2>' +
-        '<div class="err" id="gatePwErr">Incorrect password.</div>' +
-        '<input type="password" id="gatePwInput" placeholder="Password" autofocus />' +
-        '<button id="gatePwBtn">Unlock</button></div>';
-      document.body.appendChild(overlay);
-      function tryUnlock(){
-        var v = document.getElementById('gatePwInput').value;
-        if (v === GATE_PW) {
-          sessionStorage.setItem('gateOk', '1');
-          document.body.classList.remove('gate-locked');
-          overlay.remove();
-        } else {
-          document.getElementById('gatePwErr').style.display = 'block';
-        }
-      }
-      document.getElementById('gatePwBtn').addEventListener('click', tryUnlock);
-      document.getElementById('gatePwInput').addEventListener('keydown', function(e){
-        if (e.key === 'Enter') tryUnlock();
-      });
-    });
-  })();
-</script>
 </head>
 <body>
+<script>
+(function(){
+  var GATE_PW = "UXTeam";
+  if (document.documentElement.classList.contains('e03-unlocked')) return;
+  function boot(){
+    var overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;inset:0;z-index:999999;background:#0b0f14;display:flex;align-items:center;justify-content:center;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;visibility:visible;';
+    overlay.innerHTML =
+      '<form id="e03gateForm" style="text-align:center;color:#fff;">' +
+        '<div style="font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:#8a97a6;margin-bottom:14px;">Private preview</div>' +
+        '<input id="e03gateInput" type="password" autocomplete="off" ' +
+          'style="font-size:18px;padding:12px 16px;border-radius:8px;border:1px solid #2a333d;background:#151b22;color:#fff;width:220px;text-align:center;outline:none;display:block;margin:0 auto;" ' +
+          'placeholder="Password" />' +
+        '<button id="e03gateBtn" type="submit" ' +
+          'style="margin-top:12px;font-size:14px;font-weight:600;padding:10px 22px;border-radius:8px;border:none;background:#28CC95;color:#0b0f14;cursor:pointer;">Enter</button>' +
+        '<div id="e03gateErr" style="color:#ff4d6a;font-size:13px;margin-top:10px;height:16px;"></div>' +
+      '</form>';
+    document.body.appendChild(overlay);
+    document.body.style.visibility = 'visible';
+    var form = overlay.querySelector('#e03gateForm');
+    var input = overlay.querySelector('#e03gateInput');
+    var err = overlay.querySelector('#e03gateErr');
+    input.addEventListener('keydown', function(e){
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        if (form.requestSubmit) { form.requestSubmit(); }
+        else { form.dispatchEvent(new Event('submit', {bubbles:true, cancelable:true})); }
+      }
+    });
+    form.addEventListener('submit', function(e){
+      e.preventDefault();
+      if (input.value === GATE_PW) {
+        try { sessionStorage.setItem('e03gate','1'); } catch(e){}
+        document.documentElement.classList.add('e03-unlocked');
+        overlay.remove();
+      } else {
+        err.textContent = 'Incorrect password';
+        input.value = '';
+        input.focus();
+      }
+    });
+    setTimeout(function(){ input.focus(); }, 50);
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', boot);
+  } else {
+    boot();
+  }
+})();
+</script>
+
+
 <div id="scaler">
   <!-- VIDEO -->
   <div id="videoArea">
@@ -2034,8 +2066,10 @@ function renderDetail(back){
     const px = sideSel==='no'? m.no : m.yes;
     let ctaHTML;
     if (insufficient){
-      ctaHTML = `<div class="warnLine">Balance ${fmt$(S.balance)} — add funds on kalshi.com or the Kalshi app.</div>
-        <div class="ctaWrap"><div class="btn btnSecondary ${d.focus==='cta'?'focused':''}" id="ctaBtn">Insufficient balance</div></div>`;
+      ctaHTML = `<div class="ctaWrap"><div class="insufficientBox" id="ctaBtn">
+          <div class="insufficientTitle">Insufficient balance</div>
+          <div class="insufficientSub">Add funds on kalshi.com or the Kalshi app, or choose a lower amount.</div>
+        </div></div>`;
     } else {
       const verb = d.addMode ? 'Add' : 'Buy';
       const label = sideSel ? `${verb} ${sideSel==='yes'?'Yes':'No'} · ${px}¢` : 'Choose Yes or No';
@@ -2177,7 +2211,7 @@ function reviewBodyHTML(po, m){
     const contracts = po.portion===100 ? pos.contracts : Math.round(pos.contracts*po.portion/100);
     const proceeds = Math.round(contracts*cur)/100;
     sideForColor = po.side;
-    h2 = 'Review order';
+    h2 = 'Review Order';
     const portionLabel = po.portion===100?'Sell all':`${po.portion}%`;
     rows = `
       <div class="cRow"><span class="k">Market</span><span class="v" style="max-width:280px;">${esc(m.q)}</span></div>
@@ -2191,8 +2225,8 @@ function reviewBodyHTML(po, m){
     const t = tradeNumbers(m, po.side, po.amount);
     sideForColor = po.side;
     h2 = po.kind==='add'
-      ? `Review order <span class="chip sm side${po.side==='yes'?'Yes':'No'}" style="margin-left:8px;">${po.side}</span>`
-      : 'Review order';
+      ? `Review Order <span class="chip sm side${po.side==='yes'?'Yes':'No'}" style="margin-left:8px;">${po.side}</span>`
+      : 'Review Order';
     const sideRow = po.kind==='add' ? '' : `<div class="cRow"><span class="k">Side</span><span class="v"><span class="chip sm side${po.side==='yes'?'Yes':'No'}">${po.side}</span></span></div>`;
     rows = `
       <div class="cRow"><span class="k">Market</span><span class="v" style="max-width:280px;">${esc(m.q)}</span></div>
@@ -3037,7 +3071,7 @@ function moveDetailFocus(newFocus){
 // Amount stepper (Left/Right on #amtField) patches #amtVal / #stepL / #stepR / #payoutVal in
 // place, reusing tradeNumbers() exactly as renderDetail/updateDetailLive already do. The one
 // case that still needs a full render(): stepping crosses the sufficient/insufficient-balance
-// boundary, which swaps the CTA's own HTML block (btnPrimary+payout vs btnSecondary+warnLine —
+// boundary, which swaps the CTA's own HTML block (btnPrimary+payout vs the insufficientBox —
 // see renderDetail's `insufficient` branch) — a structural change no in-place patch can express,
 // so that case (only) falls back to render(), same scope cut updateDetailLive already documents
 // for a live tick crossing the same boundary.
@@ -3150,7 +3184,12 @@ function detailKey(ok,back,dir){
       if (dir==='left'){ if(d.amtIdx>0){ moveDetailAmount(-1, m); pressGlyph('stepL'); } else bounce('#amtField','x'); }
       else if (dir==='right'){ if(d.amtIdx<AMOUNTS.length-1){ moveDetailAmount(1, m); pressGlyph('stepR'); } else bounce('#amtField','x'); }
       else if (dir==='up'){ if(hasPosActions){ moveDetailFocus('posAdd'); } else { d.chevronFrom='amount'; d.ctxIdx=d.ctxAncestry.length-1; moveDetailFocus('chevron'); } }
-      else if (dir==='down'||ok){ moveDetailFocus('cta'); }
+      else if (dir==='down'||ok){
+        // Insufficient balance is a status, not an action (correction pass): CTA is
+        // unfocusable whenever it would render as the insufficientBox.
+        if (!insufficient){ moveDetailFocus('cta'); }
+        else if (dir==='down'){ bounce('#amtField','y'); }
+      }
     } else { // cta
       if (dir==='up'){ moveDetailFocus('amount'); }
       else if (dir==='left'||dir==='right'){ bounce('#ctaBtn','x'); }
@@ -3188,8 +3227,11 @@ function detailKey(ok,back,dir){
     }
     else if (dir==='up'){ moveDetailFocus(d.side==='no'?'no':'yes'); }
     else if (dir==='down'||ok){
-      if (d.side){ moveDetailFocus('cta'); }
-      else if (dir==='down'){ bounce('#amtField','y'); }  // CTA disabled → unfocusable
+      // Insufficient balance is a status, not an action (correction pass): the CTA zone
+      // is unfocusable whenever it would render as the insufficientBox, exactly like the
+      // pre-existing "no side selected yet" case just below.
+      if (!insufficient){ moveDetailFocus('cta'); }
+      else if (dir==='down'){ bounce('#amtField','y'); }  // Insufficient balance → unfocusable
     }
   }
   else if (d.focus==='cta'){
@@ -3768,7 +3810,7 @@ function updateDetailLive(m, move){
     // it could silently go stale while the rest of the screen was current. Patched here
     // in place (textContent only). One deliberate scope cut: if this tick would flip the
     // sufficient/insufficient balance boundary, the CTA (different button style, a
-    // warnLine appearing/disappearing) is left as-is rather than reconstructed — that's a
+    // insufficientBox appearing/disappearing) is left as-is rather than reconstructed — that's a
     // structural change, which this targeted fix intentionally does not perform; a normal
     // navigation/interaction still re-renders it correctly, exactly as before this pass.
     const ctaBtn = $('#ctaBtn');
