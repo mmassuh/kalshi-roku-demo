@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Kalshi · Roku Prototype — exploration05</title>
+<title>Kalshi · Roku Prototype — exploration03</title>
 <style>
 /* ============================================================
    KALSHI ROKU PROTOTYPE — all values from DESIGN.md (TV/* tokens)
@@ -261,29 +261,55 @@ html,body{height:100%;background:#000;overflow:hidden;font-family:var(--font-ui)
    which only ever emits this markup for the one expanded Market); when expanded, .top's
    own .pctWrap/.bar are omitted (the YES/NO pills below already show price+movement+
    multiplier, so repeating them above would be redundant, not "more information"). */
-.marRow.expanded{cursor:default;}
+/* E05 refinement pass: MARKET IS OPEN vs A CONTROL HAS FOCUS are two different things —
+   see the comment block above and the refinement brief. `.marRow.expanded` always also
+   carries `.focused` (only the row currently under keyboard focus is ever expanded — see
+   cardHTML), so without this override the strong `.marRow.focused` ring (scale + 4px
+   outline, just above) would sit on the outer container for as long as the Market stays
+   open, even after focus has moved on to YES, Amount, or Review — reading as "the Market
+   itself is still selected" long after that stopped being true. This rule shares
+   `.marRow.focused`'s exact specificity (two classes) and is declared later in the sheet,
+   so it wins outright on every property it sets — no !important needed. What's left is a
+   deliberately restrained "this Market is open" cue (a hairline border + a faint fill,
+   both already-existing tokens, no new color), never competing with whichever child
+   control (`.ynBtn.focused`/`.amt.focused`/`.btn.focused`, all untouched by this) carries
+   the real, single, strong focus ring. */
+.marRow.expanded{cursor:default;outline:none;transform:none;background:var(--surface-inset);border:1.5px solid var(--stroke-std);}
+/* Compacted ~35% from this pass's first cut (see refinement brief "COMPACT THE EXPANDED
+   MARKET") — the expanded Market should read as a row that opened, not a screen that got
+   inserted into the card. Every dimension below (padding, gaps, control heights, type
+   sizes) was reduced together, not just font-size, so the compaction is structural, not
+   just cosmetic; TV-readability floor from the base Quick Order components (Detail's own
+   .yesno/.amt/.btn, reused verbatim otherwise) still applies. */
 .marRow .cardExpand{overflow:hidden;height:0;transition:height 220ms cubic-bezier(.2,0,0,1);}
-.marRow .cardExpand .cardExpandInner{padding-top:14px;}
-.marRow .cardExpand .yesno{margin-top:0;gap:10px;}
-.marRow .cardExpand .ynBtn{min-height:72px;padding:8px 14px;}
-.marRow .cardExpand .ynMain{gap:8px;}
-.marRow .cardExpand .ynBtn .side{font:600 20px/1 var(--font-ui);}
-.marRow .cardExpand .ynBtn .sep{font:600 20px/1 var(--font-ui);}
-.marRow .cardExpand .ynBtn .px{font:600 22px/1 var(--font-ui);}
-.marRow .cardExpand .ynSub{min-height:20px;}
-.marRow .cardExpand .ynSub .mult{font:500 17px/1 var(--font-ui);}
-.marRow .cardExpand .amtLbl{margin-top:14px;font-size:17px;}
-.marRow .cardExpand .amt{height:52px;margin-top:6px;}
-.marRow .cardExpand .amt .val{font:600 22px/1 var(--font-ui);}
-.marRow .cardExpand .amt .stepGlyph{font-size:22px;}
-.marRow .cardExpand .payout{margin-top:10px;}
-.marRow .cardExpand .payout .lbl{font-size:17px;}
-.marRow .cardExpand .payout .val{font-size:22px;}
-.marRow .cardExpand .ctaWrap{margin-top:14px;}
-.marRow .cardExpand .btn{height:56px;font-size:20px;}
-.marRow .cardExpand .warnLine{font-size:16px;margin-top:8px;}
-.marRow .cardExpand .banner{margin-top:12px;padding:10px 14px;font-size:16px;line-height:22px;}
-.marRow .cardExpand .dHalted{font:400 20px/26px var(--font-ui);color:var(--text-2);}
+.marRow .cardExpand .cardExpandInner{padding-top:8px;}
+.marRow .cardExpand .yesno{margin-top:0;gap:8px;}
+.marRow .cardExpand .ynBtn{min-height:48px;padding:5px 12px;border-radius:24px;}
+/* Movement indicator must NEVER wrap onto its own line (refinement brief, requirement 1) —
+   .ynMain's flex children get an implicit min-width:auto that lets the browser shrink them
+   below their content width at this compact scale, which is exactly what wraps a span's
+   text internally. nowrap+hidden forces the whole "YES · 67% ▲3" line to stay one line and
+   clip rather than wrap; the tightened gap/font-sizes below keep it fitting in the common
+   case instead of relying on that clip. */
+.marRow .cardExpand .ynMain{gap:5px;flex-wrap:nowrap;white-space:nowrap;overflow:hidden;max-width:100%;}
+.marRow .cardExpand .ynBtn .side{font:600 17px/1 var(--font-ui);}
+.marRow .cardExpand .ynBtn .sep{font:600 17px/1 var(--font-ui);}
+.marRow .cardExpand .ynBtn .px{font:600 18px/1 var(--font-ui);}
+.marRow .cardExpand .ynMain .mov{font:600 14px/1 var(--font-ui);}
+.marRow .cardExpand .ynSub{min-height:15px;}
+.marRow .cardExpand .ynSub .mult{font:500 13px/1 var(--font-ui);}
+.marRow .cardExpand .amtLbl{margin-top:8px;font-size:13px;}
+.marRow .cardExpand .amt{height:36px;margin-top:4px;padding:0 16px;border-radius:18px;}
+.marRow .cardExpand .amt .val{font:600 17px/1 var(--font-cond);}
+.marRow .cardExpand .amt .stepGlyph{font-size:17px;width:22px;}
+.marRow .cardExpand .payout{margin-top:6px;}
+.marRow .cardExpand .payout .lbl{font-size:13px;}
+.marRow .cardExpand .payout .val{font-size:16px;}
+.marRow .cardExpand .ctaWrap{margin-top:8px;}
+.marRow .cardExpand .btn{height:40px;font-size:15px;border-radius:20px;}
+.marRow .cardExpand .warnLine{font-size:13px;margin-top:5px;}
+.marRow .cardExpand .banner{margin-top:8px;padding:6px 10px;font-size:13px;line-height:18px;}
+.marRow .cardExpand .dHalted{font:400 16px/22px var(--font-ui);color:var(--text-2);}
 /* Selecting/stepping never resizes .cardExpand out from under its own transition — see
    syncExpandHeight, called after every structural re-render while a Market stays expanded
    (side selection, price-driven CTA/amount re-render) to keep this pinned px height correct
@@ -2288,9 +2314,16 @@ function moveCardTradeAmount(delta, mk){
    posAdd/posSell zone — the Core Interaction spec shows only YES/NO/Amount/CTA, so opening a
    Market in place is always a fresh Buy, never Detail's "already hold a position" Add flow
    (that stays reachable, unchanged, through the standalone Market Detail screen — see
-   PRODUCT MODEL / MARKET DETAIL above). Up from the Yes/No zone is the collapse gesture
-   (§COLLAPSING: no back-arrow control); System Back still always closes the whole panel,
-   checked first and unconditionally, exactly like every other in-panel key handler. */
+   PRODUCT MODEL / MARKET DETAIL above).
+   Refinement pass: before a side is selected, opening a Market hasn't committed the viewer
+   to anything yet, so Up/Down out of the Yes/No zone don't just collapse in place — they
+   collapse AND continue on to the adjacent Market row (or the tabs zone / a bounce at the
+   list's own edges), exactly like plain collapsed-row navigation. Only once a side is
+   actually selected does Down start advancing through the real Quick Order chain
+   (Yes/No -> Amount -> Review), at which point Up/Down stay inside the expanded Market
+   until Up walks back out of the Yes/No zone. No back-arrow control either way (§COLLAPSING).
+   System Back still always closes the whole panel, checked first and unconditionally,
+   exactly like every other in-panel key handler. */
 function cardTradeKey(ok,back,dir){
   if (back){ closePanel(); return; }
   const ct = S.cardTrade, mk = byId(ct.marketId);
@@ -2326,8 +2359,27 @@ function cardTradeKey(ok,back,dir){
   if (ct.focus==='yes'||ct.focus==='no'){
     if (dir==='left'){ if(ct.focus!=='yes'){moveCardTradeFocus('yes');} else bounce('#ctYes','x'); }
     else if (dir==='right'){ if(ct.focus!=='no'){moveCardTradeFocus('no');} else bounce('#ctNo','x'); }
-    else if (dir==='down'){ if(ct.side){ moveCardTradeFocus('amount'); } else bounce(ct.focus==='yes'?'#ctYes':'#ctNo','y'); }
-    else if (dir==='up'){ collapseCardTrade(); }
+    // Refinement brief §3 — before a side is committed, opening a Market hasn't started a
+    // trade yet, so Up/Down here behave like ordinary Market-list navigation instead of
+    // Quick Order navigation: collapse this Market and land on the adjacent row, exactly as
+    // if it had never been expanded (never auto-opening that row — a further OK does that).
+    // Once a side IS selected (the `else` below), Down enters the real Quick Order chain.
+    else if (dir==='down'){
+      if (ct.side){ moveCardTradeFocus('amount'); }
+      else {
+        const marketCount = eventOf(mk.id).markets.length;
+        collapseCardTrade(()=>{
+          if (S.marketIdx < marketCount-1){ moveMarketRowFocus(S.marketIdx+1); }
+          else bounce('.marRow.focused','y');
+        });
+      }
+    }
+    else if (dir==='up'){
+      collapseCardTrade(()=>{
+        if (S.marketIdx>0){ moveMarketRowFocus(S.marketIdx-1); }
+        else { S.listZone='tabs'; S.tabIdx=S.tab; render(); }
+      });
+    }
     else if (ok){
       // Structural change (unlocks amount/payout, changes the CTA block) — render(), same
       // as detailKey's identical branch; S.cardTrade being still-set means renderList()'s
