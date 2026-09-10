@@ -266,7 +266,7 @@ html,body{height:100%;background:#000;overflow:hidden;font-family:var(--font-ui)
    carries `.focused` (only the row currently under keyboard focus is ever expanded — see
    cardHTML), so without this override the strong `.marRow.focused` ring (scale + 4px
    outline, just above) would sit on the outer container for as long as the Market stays
-   open, even after focus has moved on to YES, Amount, or Review — reading as "the Market
+   open, even after focus has moved on to YES, Amount, or Review Order — reading as "the Market
    itself is still selected" long after that stopped being true. This rule shares
    `.marRow.focused`'s exact specificity (two classes) and is declared later in the sheet,
    so it wins outright on every property it sets — no !important needed. What's left is a
@@ -298,37 +298,58 @@ html,body{height:100%;background:#000;overflow:hidden;font-family:var(--font-ui)
    Amount/CTA have plenty of headroom above regardless). */
 .marRow .cardExpand .cardExpandInner{padding:12px 18px 16px;}
 .marRow .cardExpand .yesno{margin-top:0;gap:8px;}
-.marRow .cardExpand .ynBtn{min-height:48px;padding:5px 12px;border-radius:24px;}
+/* Typography-hierarchy pass 2 ("fix for real"): the first pass (17/17/18 -> 20/20/22) was
+   judged too subtle at real 1920x1080 scale against the COLLAPSED row's own reference type
+   (.pct is 26px, .mult is 20px there — see base rules above) — the expanded primary line was
+   still reading smaller than the row it replaces. This pass pushes further, using the
+   collapsed row's 26px .pct as the literal target for the expanded probability number, and
+   reclaims MORE internal padding/gap (not geometry) to fit it in the same 48px pill: padding
+   3px->2px vertical, .ynBtn's own gap 2px->1px. Geometry (min-height, horizontal padding,
+   border-radius, the focus-safe inset) is unchanged. */
+.marRow .cardExpand .ynBtn{min-height:48px;padding:2px 10px;border-radius:24px;gap:1px;}
 /* Movement indicator must NEVER wrap onto its own line (refinement brief, requirement 1) —
    .ynMain's flex children get an implicit min-width:auto that lets the browser shrink them
    below their content width at this compact scale, which is exactly what wraps a span's
    text internally. nowrap+hidden forces the whole "YES · 67%" line to stay one line and clip
    rather than wrap; the tightened gap/font-sizes below keep it fitting in the common case
-   instead of relying on that clip. */
-.marRow .cardExpand .ynMain{gap:5px;flex-wrap:nowrap;white-space:nowrap;overflow:hidden;max-width:100%;}
-.marRow .cardExpand .ynBtn .side{font:600 17px/1 var(--font-ui);}
-.marRow .cardExpand .ynBtn .sep{font:600 17px/1 var(--font-ui);}
-.marRow .cardExpand .ynBtn .px{font:600 18px/1 var(--font-ui);}
+   instead of relying on that clip.
+   Typography-hierarchy pass 2: YES/NO + probability are the PRIMARY decision controls and
+   must clearly dominate — 20/20/22 (pass 1) -> 23/23/26, with .px (the probability, the
+   number a viewer actually decides on) matched directly to the collapsed row's own .pct
+   size (26px) so the expanded state reads with the same confidence as the row it replaces. */
+.marRow .cardExpand .ynMain{gap:4px;flex-wrap:nowrap;white-space:nowrap;overflow:hidden;max-width:100%;}
+.marRow .cardExpand .ynBtn .side{font:600 23px/1 var(--font-ui);}
+.marRow .cardExpand .ynBtn .sep{font:600 23px/1 var(--font-ui);}
+.marRow .cardExpand .ynBtn .px{font:600 26px/1 var(--font-ui);}
 /* Refinement: movement moved off the primary line onto the secondary one, grouped with the
-   multiplier as one unit — "1.49x ▲3". The nowrap/clip guard that used to protect .ynMain's
-   line (above) moves here with it, since .ynSub is now the line that can grow; .ynMain no
-   longer carries the movement span at all, so it no longer needs the same crowding concern.
-   Position-only change, per the correction pass: font sizes below are untouched from what
-   they were pre-refinement (.mult was already 13px in .ynSub; .mov is still the same 14px it
-   was when it lived in .ynMain — moving lines must not also shrink type). Gap stays at the
-   base .ynSub value (8px, inherited — no override here), same as before this refinement. */
+   multiplier as one unit — "1.49x ▲3" — and stays there structurally (see ynBtnHTML: the
+   movement span is only ever emitted inside .ynSub's template literal, never .ynMain's; a
+   live tick only ever replaces #ynYesMov's innerHTML in place — see updateCardMarketRow/
+   updateDetailLive — so there is no code path, initial render or live-patched, that can put
+   it back on the primary line). The nowrap/clip guard that used to protect .ynMain's line
+   moves here with it, since .ynSub is now the line that can grow.
+   Typography-hierarchy pass 2: multiplier + movement get a smaller further bump (15/16 ->
+   16/17) than the primary line above — real, but deliberately modest so they stay clearly
+   secondary to "YES · 50%". */
 .marRow .cardExpand .ynSub{min-height:15px;flex-wrap:nowrap;white-space:nowrap;overflow:hidden;max-width:100%;}
-.marRow .cardExpand .ynSub .mult{font:500 13px/1 var(--font-ui);}
-.marRow .cardExpand .ynSub .mov{font:600 14px/1 var(--font-ui);}
-.marRow .cardExpand .amtLbl{margin-top:8px;font-size:13px;}
+.marRow .cardExpand .ynSub .mult{font:500 16px/1 var(--font-ui);}
+.marRow .cardExpand .ynSub .mov{font:600 16px/1 var(--font-ui);}
+/* Typography-hierarchy pass 2: AMOUNT/"To win" stay supporting labels (14 -> 15, a small
+   bump) while the amount value and payout value they introduce get a further real increase
+   (21 -> 24, 20 -> 23) — still clearly below YES/NO+probability (26px) but strong, matching
+   the hierarchy target's #2 tier. */
+.marRow .cardExpand .amtLbl{margin-top:8px;font-size:15px;}
 .marRow .cardExpand .amt{height:36px;margin-top:4px;padding:0 16px;border-radius:18px;}
-.marRow .cardExpand .amt .val{font:600 17px/1 var(--font-cond);}
+.marRow .cardExpand .amt .val{font:600 24px/1 var(--font-cond);}
 .marRow .cardExpand .amt .stepGlyph{font-size:17px;width:22px;}
 .marRow .cardExpand .payout{margin-top:6px;}
-.marRow .cardExpand .payout .lbl{font-size:13px;}
-.marRow .cardExpand .payout .val{font-size:16px;}
+.marRow .cardExpand .payout .lbl{font-size:15px;}
+.marRow .cardExpand .payout .val{font-size:23px;}
 .marRow .cardExpand .ctaWrap{margin-top:8px;}
-.marRow .cardExpand .btn{height:40px;font-size:15px;border-radius:20px;}
+/* Typography-hierarchy pass 2: CTA text further increased (18 -> 20) for TV readability as a
+   primary action — clearly below YES/NO+probability and the amount/payout values, clearly
+   above the multiplier/movement/label tier. Button height unchanged (40px). */
+.marRow .cardExpand .btn{height:40px;font-size:20px;border-radius:20px;}
 .marRow .cardExpand .warnLine{font-size:13px;margin-top:5px;}
 .marRow .cardExpand .banner{margin-top:8px;padding:6px 10px;font-size:13px;line-height:18px;}
 .marRow .cardExpand .dHalted{font:400 16px/22px var(--font-ui);color:var(--text-2);}
@@ -2144,11 +2165,13 @@ function cardExpandBodyHTML(mk, ct){
       <div class="ctaWrap"><div class="btn btnSecondary ${ct.focus==='cta'?'focused':''}" id="ctCtaBtn">Insufficient balance</div></div>`;
   } else {
     // E05 spec (unlike Detail's own CTA, which labels itself "Buy Yes · 8¢"): this CTA is
-    // always literally "Review" once enabled — it never states price/side itself, since
-    // that's exactly what the Review dialog it opens is for. Keeps the CTA label constant
-    // across amount/side changes (nothing to patch on tick/step) and matches the spec's
-    // named sequence, Market -> YES/NO -> Amount -> Review -> Confirm, verbatim.
-    const label = sideSel ? 'Review' : 'Choose Yes or No';
+    // always literally "Review Order" once enabled — it never states price/side itself,
+    // since that's exactly what the Review dialog it opens is for; "Order" makes explicit
+    // that pressing it only reviews the proposed order, not that it has been submitted.
+    // Keeps the CTA label constant across amount/side changes (nothing to patch on
+    // tick/step) and matches the spec's named sequence, Market -> YES/NO -> Amount ->
+    // Review Order -> Confirm, verbatim.
+    const label = sideSel ? 'Review Order' : 'Choose Yes or No';
     ctaHTML = `<div class="ctaWrap"><div class="btn btnPrimary ${sideSel==='no'?'noSide':''} ${ctaEnabled?'':'disabled'} ${ct.focus==='cta'?'focused':''}" id="ctCtaBtn">${label}</div></div>`;
   }
   const yesnoHTML = `<div class="yesno">
@@ -2347,7 +2370,7 @@ function moveCardTradeAmount(delta, mk){
    collapse AND continue on to the adjacent Market row (or the tabs zone / a bounce at the
    list's own edges), exactly like plain collapsed-row navigation. Only once a side is
    actually selected does Down start advancing through the real Quick Order chain
-   (Yes/No -> Amount -> Review), at which point Up/Down stay inside the expanded Market
+   (Yes/No -> Amount -> Review Order), at which point Up/Down stay inside the expanded Market
    until Up walks back out of the Yes/No zone. No back-arrow control either way (§COLLAPSING).
    System Back still always closes the whole panel, checked first and unconditionally,
    exactly like every other in-panel key handler. */
@@ -2714,7 +2737,7 @@ function reviewBodyHTML(po, m){
     const contracts = po.portion===100 ? pos.contracts : Math.round(pos.contracts*po.portion/100);
     const proceeds = Math.round(contracts*cur)/100;
     sideForColor = po.side;
-    h2 = 'Review order';
+    h2 = 'Review Order';
     const portionLabel = po.portion===100?'Sell all':`${po.portion}%`;
     rows = `
       <div class="cRow"><span class="k">Market</span><span class="v" style="max-width:280px;">${esc(m.q)}</span></div>
@@ -2728,8 +2751,8 @@ function reviewBodyHTML(po, m){
     const t = tradeNumbers(m, po.side, po.amount);
     sideForColor = po.side;
     h2 = po.kind==='add'
-      ? `Review order <span class="chip sm side${po.side==='yes'?'Yes':'No'}" style="margin-left:8px;">${po.side}</span>`
-      : 'Review order';
+      ? `Review Order <span class="chip sm side${po.side==='yes'?'Yes':'No'}" style="margin-left:8px;">${po.side}</span>`
+      : 'Review Order';
     const sideRow = po.kind==='add' ? '' : `<div class="cRow"><span class="k">Side</span><span class="v"><span class="chip sm side${po.side==='yes'?'Yes':'No'}">${po.side}</span></span></div>`;
     rows = `
       <div class="cRow"><span class="k">Market</span><span class="v" style="max-width:280px;">${esc(m.q)}</span></div>
