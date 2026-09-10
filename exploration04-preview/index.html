@@ -443,26 +443,43 @@ html,body{height:100%;background:#000;overflow:hidden;font-family:var(--font-ui)
 .posCard .pnl.up{color:var(--yes);}
 .posCard .pnl.down{color:var(--no);}
 
-/* yes/no selector — two-tier label per pill (rules #5-7): .ynMain keeps the original
-   "YES · 25%" weight/prominence unchanged; .ynSub adds the small muted multiplier beneath
-   it, sized/colored so it reads as clearly secondary to both the % above it and the pill's
-   own YES/NO side color. Height grew (80 -> 92px) to fit the second line without crowding —
-   the giant hero % this replaced was 64px tall on its own, so net vertical footprint on
-   Detail is smaller than before, not larger. */
+/* yes/no selector — E04/E05 visual-consistency pass (explicitly authorized exception to
+   E04's freeze): row 1 (.ynMain) is now the side label ALONE ("YES"/"NO" — large, bold,
+   semantic color via .ynBtn.yes/.no, centered) — probability no longer lives here. Row 2
+   (.ynSub) carries multiplier + movement + probability together as one same-weight metadata
+   line — "2.63x  ▲3  38%" — with NO typographic hierarchy between them; only color tells them
+   apart (.mult muted gray, .mov its existing up/down color, .px left with no explicit color
+   override so it simply inherits .ynBtn.yes/.no's own green/red, same mechanism the old
+   primary-line .px relied on, just applied one level down). This matches the structure E05
+   already uses for its in-place Quick Order pills (see that file's ynBtnHTML). Height (92px)
+   and overall pill footprint are unchanged — this is a content-hierarchy change, not a resize. */
 .yesno{margin-top:32px;display:flex;gap:16px;}
 .ynBtn{flex:1;min-height:92px;padding:10px 20px;border-radius:46px;border:2px solid var(--stroke-std);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;background:transparent;transition:background 150ms,border-color 150ms,transform 150ms;}
 .ynMain{display:flex;align-items:baseline;gap:10px;}
 .ynBtn .side{font:600 26px/32px var(--font-ui);letter-spacing:.02em;}
-.ynBtn .sep{font:600 26px/32px var(--font-ui);opacity:.5;margin:0 2px;}
-.ynBtn .px{font:600 28px/34px var(--font-ui);font-variant-numeric:tabular-nums;}
-.ynSub{display:flex;align-items:baseline;gap:8px;min-height:24px;}
-/* Muted regardless of side color — must not compete with YES/NO or the % (rule #5). Held at
-   the type scale's 20px floor (DESIGN.md §4.2) — secondary via weight/color, not size. */
+/* Secondary-row spacing pass: three logical GROUPS (multiplier, probability, movement), not
+   four equal siblings — the inter-group gap (12px) is what separates them, deliberately much
+   larger than the 4px gap glueing movement's own arrow to its number (below), so "▲3" reads
+   as one unit while still being clearly a separate group from the multiplier and probability
+   on either side of it. */
+.ynSub{display:flex;align-items:baseline;gap:12px;min-height:24px;}
+/* Row 2's three fields share one font (family/size/weight/line-height) by design — held at
+   the type scale's 20px floor (DESIGN.md §4.2) — so nothing in this row reads as more
+   important than anything else; differentiation is color-only (rule immediately below). */
 .ynSub .mult{font:500 20px/24px var(--font-ui);color:var(--text-3);font-variant-numeric:tabular-nums;transition:color .2s;}
-/* Movement badge attached to YES only (rule #7) — reuses the base .mov component (§7.7,
-   20/26/600) as-is rather than introducing a smaller size; "minor" here means inline and
-   attached to one pill, not a smaller typographic treatment than the rest of the system uses. */
-.ynMain .ynMovSlot{display:inline-flex;}
+.ynSub .px{font:500 20px/24px var(--font-ui);font-variant-numeric:tabular-nums;}
+/* Movement group: arrow + value as ONE flex item as far as .ynSub's own gap is concerned —
+   inline-flex here (rather than the plain block movHTML also renders correctly elsewhere)
+   makes the whitespace text node between .movArrow/.movVal in the markup inert (flexbox never
+   turns a whitespace-only run between real children into a box), so this 4px gap is the only
+   spacing between them — visually "glued", unlike the 12px between groups above. */
+.ynSub .mov{font:500 20px/24px var(--font-ui);display:inline-flex;align-items:baseline;gap:4px;}
+/* Movement badge attached to YES only (rule #7), now living on row 2 as the third group.
+   :empty collapse (no movement — closed/suspended/settled markets, or a tick with no delta)
+   removes the slot from flex flow entirely so .ynSub's own `gap` doesn't leave a hanging blank
+   space — row settles to "1.61x   62%", still visually balanced. */
+.ynSub .ynMovSlot{display:inline-flex;}
+.ynSub .ynMovSlot:empty{display:none;}
 .ynBtn.yes{color:var(--yes);}
 .ynBtn.no{color:var(--no);}
 .ynBtn.yes.selected{background:var(--yes-tint);border-color:var(--yes);}
@@ -1231,18 +1248,28 @@ function updateCardGraphLine(mk){
   const dot = document.querySelector(`#cardTrack .cardGraphDot[data-mid="${mk.id}"]`);
   if (dot){ dot.setAttribute('cx', last[0].toFixed(1)); dot.setAttribute('cy', last[1].toFixed(1)); }
 }
+// Movement is one semantic unit (an arrow glued to its delta, e.g. "▲3") — split into two
+// spans so the ynSub-scoped flex context below can give them a much tighter internal gap than
+// the space between logical groups (mult/probability/movement), while the literal space kept
+// between the spans here means any OTHER, non-flex consumer of this same markup (e.g. a plain
+// block-level .mov badge elsewhere) still reads as normal text with ordinary spacing — flexbox
+// simply ignores a whitespace-only text node between real flex-item children, so that same
+// space contributes nothing once .ynSub's own `gap` is what's actually doing the spacing.
 function movHTML(m){
   if (!m.dir || !m.delta || m.status==='closed' || m.status==='suspended' || m.status==='settled') return '';
   const g = m.dir==='up' ? '▲' : '▼';
-  return `<div class="mov ${m.dir}">${g} ${m.delta}</div>`;
+  return `<div class="mov ${m.dir}"><span class="movArrow">${g}</span> <span class="movVal">${m.delta}</span></div>`;
 }
-// Market Detail's YES/NO control (rules #5-7): a two-tier label per pill — primary
-// "YES · 25%" line unchanged in weight/prominence, plus a small muted secondary multiplier
-// beneath it. Movement (m.dir/m.delta reflects the YES-side price move) is attached only to
-// the YES pill, inline and minor — "YES · 25% ▲2" — rather than reviving the old standalone
-// hero badge; Event-level (marRowHTML) remains the primary place for movement emphasis.
+// Market Detail's YES/NO control — E04/E05 visual-consistency pass (explicitly authorized
+// exception to E04's freeze): row 1 is the side label alone ("YES"/"NO", nothing else — no
+// separator, no percentage); row 2 carries three logical groups — multiplier, probability,
+// movement (the movement arrow+value glued together as one group via movHTML above) — in that
+// order, probability staying the visual center as the most important secondary value. All
+// three share one same-weight typography (see the CSS above this rule's comment); color is
+// the only thing telling them apart. Movement (m.dir/m.delta reflects the YES-side price
+// move) stays attached only to the YES pill, on row 2.
 // `id`/`focused` are only passed for focusable variants (browse-only, ready-not-addMode);
-// halted and addMode variants omit them, matching the pre-multiplier markup exactly.
+// halted and addMode variants omit them, matching the pre-existing markup exactly.
 function ynBtnHTML(m, side, opts){
   opts = opts || {};
   const cents = side==='yes'? m.yes : m.no;
@@ -1250,8 +1277,8 @@ function ynBtnHTML(m, side, opts){
   const idAttr = opts.id ? ` id="${opts.id}"` : '';
   const movSlot = side==='yes' ? `<span class="ynMovSlot" id="ynYesMov">${movHTML(m)}</span>` : '';
   return `<div class="${cls}"${idAttr}>
-    <div class="ynMain"><span class="side">${side==='yes'?'YES':'NO'}</span><span class="sep">·</span><span class="px">${cents}%</span>${movSlot}</div>
-    <div class="ynSub"><span class="mult">${multFor(cents)}</span></div>
+    <div class="ynMain"><span class="side">${side==='yes'?'YES':'NO'}</span></div>
+    <div class="ynSub"><span class="mult">${multFor(cents)}</span><span class="px">${cents}%</span>${movSlot}</div>
   </div>`;
 }
 // Positions belong to the account: invisible while signed out (AUTH.md §3, State 1)

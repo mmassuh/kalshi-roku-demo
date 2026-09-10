@@ -335,7 +335,14 @@ html,body{height:100%;background:#000;overflow:hidden;font-family:var(--font-ui)
    treatment at this pill size, not by an arbitrary padding choice, so 1px (not 7-8px) is the
    real safely-recoverable amount without changing that focus treatment itself (out of scope
    for this pass). */
-.marRow .cardExpand .yesno{margin:0 -1px 0;gap:8px;}
+/* E04-visual-alignment pass: E04's .yesno uses a 16px gap between YES/NO — doubling this
+   row's 8px would eat real pill width in a ~304px-wide row (unlike E04's ~1080px-wide Detail
+   panel), so this moves only part-way (8->10px), enough to read as less cramped without
+   reintroducing a large gutter or forcing row2's worst-case content (mult+movement+99%) to
+   wrap — re-verified empirically after this change. margin stays exactly as tuned by the
+   gutter-reduction pass above (unrelated to this gap, and untouched by it: this margin sets
+   the ROW's own outer inset, gap only splits width between the two pill children). */
+.marRow .cardExpand .yesno{margin:0 -1px 0;gap:10px;}
 /* Typography-hierarchy pass 2 ("fix for real"): the first pass (17/17/18 -> 20/20/22) was
    judged too subtle at real 1920x1080 scale against the COLLAPSED row's own reference type
    (.pct is 26px, .mult is 20px there — see base rules above) — the expanded primary line was
@@ -354,7 +361,17 @@ html,body{height:100%;background:#000;overflow:hidden;font-family:var(--font-ui)
    the wider pill (see .yesno above) and the now-single-word row 1 can spare — row 2's own
    worst-case width (mult+movement+99%) was re-verified to still fit on one line with this
    padding, not just row 1's shorter "YES"/"NO". */
-.marRow .cardExpand .ynBtn{min-height:56px;padding:3px 8px;border-radius:28px;gap:5px;}
+/* E04-visual-alignment pass (style only, no architecture change): E04's own .ynBtn is
+   min-height 92px / padding 10px 20px / radius 46px (=height/2, always a full pill) / row-gap
+   4px — literal values that don't fit this card's ~304px-wide row (E04's pair of pills alone
+   run ~496px in a full-width Detail panel). Moved toward that proportionally instead: height
+   56->66px, padding 3px 8px -> 6px 10px (more breathing room without eating the row2 worst-
+   case fit — re-verified empirically, see the gutter/wrap tests), radius kept at height/2
+   (28->33) per the same "always a full pill" rule E04 itself follows, row-gap 5->6px for a
+   touch more vertical room between "YES" and its metadata line. Selected/focused background,
+   border color, outline (4px/3px/scale 1.04) are untouched because they were ALREADY identical
+   to E04's — inherited from the same unscoped base .ynBtn.yes/.no rules, not overridden here. */
+.marRow .cardExpand .ynBtn{min-height:66px;padding:6px 10px;border-radius:33px;gap:6px;}
 /* Information-hierarchy pass (structural): row 1 is now the side label ALONE — probability
    moved down to row 2 (see ynBtnHTML's opts.compact branch) to read as one clean "YES" /
    "NO" word rather than "YES · 38%". Still nowrap/hidden as defensive clipping (a single
@@ -363,27 +380,36 @@ html,body{height:100%;background:#000;overflow:hidden;font-family:var(--font-ui)
    shares its line, no need to grow it further. */
 .marRow .cardExpand .ynMain{flex-wrap:nowrap;white-space:nowrap;overflow:hidden;max-width:100%;}
 .marRow .cardExpand .ynBtn .side{font:700 26px/1 var(--font-ui);}
-/* Row 2 now carries THREE things as one coherent metadata line — multiplier, movement,
-   probability, in that left-to-right order (probability sits rightmost, per spec) — instead
-   of just multiplier+movement. All three share identical family/size/weight/line-height
-   (16px/500, unchanged from the prior pass); color is the ONLY thing that tells them apart:
-   .mult stays muted gray (its own rule below), .mov keeps its existing up/down color classes
-   (untouched — no rule needed here), and .px is deliberately given NO color override, so it
-   simply inherits .ynBtn.yes/.no's green/red the same way the old primary-line .px did one
-   row up. Kept at the same nowrap/hidden discipline as row 1 — clip, never wrap — but see the
-   :empty rule just below for why that clip essentially never fires in practice. */
-.marRow .cardExpand .ynSub{min-height:15px;flex-wrap:nowrap;white-space:nowrap;overflow:hidden;max-width:100%;}
+/* Row 2 carries THREE logical GROUPS — multiplier, probability, movement (arrow+value glued
+   together as one group, see movHTML/.mov below) — in that left-to-right order, probability
+   staying the visual center as the most important secondary value (spec: "2.63x 38% ▲3", not
+   "2.63x ▲3 38%"). All three groups share identical family/size/weight/line-height (16px/500,
+   unchanged from the prior pass); color is the ONLY thing that tells them apart: .mult stays
+   muted gray (its own rule below), .mov keeps its existing up/down color classes (untouched —
+   no rule needed here), and .px is deliberately given NO color override, so it simply inherits
+   .ynBtn.yes/.no's green/red the same way the old primary-line .px did one row up. The gap
+   BETWEEN these three groups (8px, below) is deliberately much larger than the 3px gap glueing
+   movement's own arrow to its number (.mov's own rule) — "▲3" must read as one unit, clearly
+   distinct from the groups on either side of it. Kept at the same nowrap/hidden discipline as
+   row 1 — clip, never wrap — but see the :empty rule just below for why that clip essentially
+   never fires in practice. */
+.marRow .cardExpand .ynSub{min-height:15px;gap:8px;flex-wrap:nowrap;white-space:nowrap;overflow:hidden;max-width:100%;}
 .marRow .cardExpand .ynSub .mult{font:500 16px/1 var(--font-ui);}
-.marRow .cardExpand .ynSub .mov{font:500 16px/1 var(--font-ui);}
 .marRow .cardExpand .ynSub .px{font:500 16px/1 var(--font-ui);}
+/* Movement group: arrow + value as ONE flex item as far as .ynSub's own 8px inter-group gap is
+   concerned — inline-flex here makes the whitespace text node between .movArrow/.movVal in the
+   markup inert (flexbox never turns a whitespace-only run between real children into a box),
+   so this 3px gap is the only spacing between them — visually "glued", unlike the 8px between
+   groups. */
+.marRow .cardExpand .ynSub .mov{font:500 16px/1 var(--font-ui);display:inline-flex;align-items:baseline;gap:3px;}
 /* ynMovSlot is unconditionally mounted on the YES pill (see ynBtnHTML) so live ticks always
    have a stable node to patch, even the instant a market has no movement to show — but
-   .ynSub's own flex `gap` (8px, inherited from the base rule) would otherwise still open a
-   gap on both sides of that empty span, leaving an awkward hole between "2.63x" and "38%"
-   exactly when there's nothing to show between them (the case the brief calls out by name).
-   :empty removes it from layout entirely whenever movHTML(m) returned '' — mult and px then
-   sit directly next to each other with one normal gap, no dead space, no JS needed to keep it
-   in sync (the live-tick patch already just swaps this span's innerHTML in place). */
+   .ynSub's own flex `gap` (8px, above) would otherwise still open a gap on both sides of that
+   empty span, leaving an awkward hole between "2.63x" and "38%" exactly when there's nothing
+   to show between them (the case the brief calls out by name). :empty removes it from layout
+   entirely whenever movHTML(m) returned '' — mult and px then sit directly next to each other
+   with one normal gap, no dead space, no JS needed to keep it in sync (the live-tick patch
+   already just swaps this span's innerHTML in place). */
 .marRow .cardExpand .ynSub .ynMovSlot:empty{display:none;}
 /* Typography-hierarchy pass 2: AMOUNT/"To win" stay supporting labels (14 -> 15, a small
    bump) while the amount value and payout value they introduce get a further real increase
@@ -1410,10 +1436,17 @@ function updateCardGraphLine(mk){
   const dot = document.querySelector(`#cardTrack .cardGraphDot[data-mid="${mk.id}"]`);
   if (dot){ dot.setAttribute('cx', last[0].toFixed(1)); dot.setAttribute('cy', last[1].toFixed(1)); }
 }
+// Movement is one semantic unit (an arrow glued to its delta, e.g. "▲3") — split into two
+// spans so a flex-scoped consumer can give them a much tighter internal gap than the space
+// between logical groups (see .ynSub .mov below), while the literal space kept between the
+// spans here means every OTHER consumer of this same shared function (the collapsed marRow
+// badge, position rows) still renders plain, unchanged text spacing — flexbox simply ignores
+// a whitespace-only text node between real flex-item children, so that space contributes
+// nothing once a flex `gap` is actually doing the spacing; everywhere else it's just a space.
 function movHTML(m){
   if (!m.dir || !m.delta || m.status==='closed' || m.status==='suspended' || m.status==='settled') return '';
   const g = m.dir==='up' ? '▲' : '▼';
-  return `<div class="mov ${m.dir}">${g} ${m.delta}</div>`;
+  return `<div class="mov ${m.dir}"><span class="movArrow">${g}</span> <span class="movVal">${m.delta}</span></div>`;
 }
 // Market Detail's YES/NO control (rules #5-7): a two-tier label per pill — primary
 // "YES · 25%" line unchanged in weight/prominence, plus a small muted secondary line that
@@ -1445,7 +1478,7 @@ function ynBtnHTML(m, side, opts){
   if (opts.compact){
     return `<div class="${cls}"${idAttr}>
     <div class="ynMain"><span class="side">${side==='yes'?'YES':'NO'}</span></div>
-    <div class="ynSub"><span class="mult">${multFor(cents)}</span>${movSlot}<span class="px">${cents}%</span></div>
+    <div class="ynSub"><span class="mult">${multFor(cents)}</span><span class="px">${cents}%</span>${movSlot}</div>
   </div>`;
   }
   return `<div class="${cls}"${idAttr}>
@@ -1864,7 +1897,16 @@ function renderList(back){
   }
 
   body.innerHTML = `<div class="screen ${animCls()}" id="listScreen">${tabsHTML}${content}</div>`;
-  if (S.listState==='ready') scrollCardsToFocus(); else scrollListToFocus();
+  // Horizontal-drift fix: this innerHTML rebuild just replaced #cardTrack itself with a brand
+  // new element, so there is no meaningful "previous frame" for a CSS transition to slide from
+  // — instant:true snaps it straight back to the already-correct position instead of letting
+  // #cardTrack's transition:transform animate in from its fresh element's default (untransformed)
+  // state, which is what produced the horizontal drift on Market open/collapse (see
+  // scrollCardsToFocus's own comment). The one case that SHOULD visibly slide — real Left/Right
+  // card navigation — never reaches this line at all: moveCardFocus() patches classes in place
+  // on the EXISTING #cardTrack (no render(), no rebuild) and calls scrollCardsToFocus() with no
+  // argument, so its transition still animates normally.
+  if (S.listState==='ready') scrollCardsToFocus(true); else scrollListToFocus();
   // E05: every render() of this screen remounts a still-expanded Market's .cardExpand at
   // height:0 (see marRowHTML) — this is the ONE place that resyncs it back to its real
   // content height, so every call site that mutates S.cardTrade and re-renders (a side
@@ -1926,16 +1968,36 @@ function cardHTML(ev, idx, total, active){
 // vertical version's comment above it), which is what produces the "partial peek of the
 // next/previous card" TV-native affordance — clamped at the ends, so the first/last card
 // never shows a peek of content that doesn't exist.
-function scrollCardsToFocus(){
+// `instant` (horizontal-drift fix): renderList() rebuilds #cardTrack's entire innerHTML on
+// EVERY render() — including the ones Market open/collapse trigger (openCardTradeNow,
+// collapseCardTrade's finish()) even though the ACTIVE EVENT hasn't changed at all. The fresh
+// #cardTrack this creates starts at its default (untransformed) position, and #cardTrack's own
+// `transition:transform 250ms` (below) then animates the very next `.style.transform` write —
+// so every Market open/collapse on any card past the first was visibly sliding the whole
+// carousel back in from position 0 and re-settling, a real, measured drift (up to ~400px at
+// its peak), not a cosmetic rounding wobble. `instant:true` (passed only by renderList()'s own
+// resync call — see below) suppresses that by borrowing syncExpandHeight's own established
+// transition:none -> write -> reflow -> restore pattern, so a same-card re-render snaps back to
+// exactly where it already was with zero visible motion. moveCardFocus() (the actual Left/Right
+// carousel move, where #cardTrack is NOT rebuilt and the slide MUST stay animated) keeps calling
+// this with no argument, i.e. instant=false, unchanged.
+function scrollCardsToFocus(instant){
   const track = $('#cardTrack');
   if (!track) return;
   const cards = track.querySelectorAll('.evCard');
   const wrap = $('#cardWrap');
-  if (!cards.length || !wrap || S.listZone!=='rows'){ track.style.transform='none'; return; }
+  const apply = (value) => {
+    if (!instant){ track.style.transform = value; return; }
+    track.style.transition = 'none';
+    track.style.transform = value;
+    void track.offsetWidth;               // flush, so re-enabling transition below can't retro-animate this jump
+    track.style.transition = '';
+  };
+  if (!cards.length || !wrap || S.listZone!=='rows'){ apply('none'); return; }
   const viewW = wrap.clientWidth;
   const total = track.scrollWidth;
   const card = cards[S.rowIdx];
-  if (!card){ track.style.transform='none'; return; }
+  if (!card){ apply('none'); return; }
   const cardW = card.offsetWidth;
   // Fixed 2026-09-08 (per user correction -- see EXPLORATION03.md "Corrections"): the
   // centering math below was missing #cardWrap's own left padding. #cardWrap clips with
@@ -1951,7 +2013,7 @@ function scrollCardsToFocus(){
   const padL = parseFloat(cs.paddingLeft) || 0, padR = parseFloat(cs.paddingRight) || 0;
   let off = card.offsetLeft - (viewW/2 - cardW/2) + padL;
   off = Math.max(0, Math.min(off, Math.max(0, total - viewW + padL + padR)));
-  track.style.transform = `translateX(${-off}px)`;
+  apply(`translateX(${-off}px)`);
 }
 // Priority 0 — Left/Right between cards: patches .active/.focused classes on the two
 // .evCard elements involved (and the one Market row each carries into/out of focus)
