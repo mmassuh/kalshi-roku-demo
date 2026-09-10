@@ -282,22 +282,44 @@ html,body{height:100%;background:#000;overflow:hidden;font-family:var(--font-ui)
    just cosmetic; TV-readability floor from the base Quick Order components (Detail's own
    .yesno/.amt/.btn, reused verbatim otherwise) still applies. */
 .marRow .cardExpand{overflow:hidden;height:0;transition:height 220ms cubic-bezier(.2,0,0,1);}
-.marRow .cardExpand .cardExpandInner{padding-top:8px;}
+/* Focus-safe inset (bugfix): .cardExpand's own overflow:hidden is load-bearing for the
+   height-animation and must stay — but .cardExpandInner previously had zero horizontal/
+   bottom padding, so .yesno/.amt/.ctaWrap filled its full width and the focused child's own
+   outline (4px, offset 3px -> ~7px) plus its scale(1.04) (each pill/CTA grows ~2% of its own
+   width beyond its unscaled edge, centered) had nowhere to render but past .cardExpand's
+   clip boundary. Measured worst case is the full-width CTA button: ~6px from scale + ~7px
+   from outline per side once scaled together ≈ 13px; YES/NO (half-width pills) need less
+   (~10px) but share the same inset since they're flush against the same edges. 18px
+   horizontal / 16px bottom clears all of it with a few px of margin to spare (measured via
+   the actual outline+transform math, not eyeballed), and — because .cardExpand's own height
+   is a JS-measured pin of .cardExpandInner.scrollHeight (see syncExpandHeight) — any padding
+   added here is automatically included, no other change needed. Top padding only needed to
+   go from 8 to 12 (YES/NO's own outline was ~1px short of the existing slack there;
+   Amount/CTA have plenty of headroom above regardless). */
+.marRow .cardExpand .cardExpandInner{padding:12px 18px 16px;}
 .marRow .cardExpand .yesno{margin-top:0;gap:8px;}
 .marRow .cardExpand .ynBtn{min-height:48px;padding:5px 12px;border-radius:24px;}
 /* Movement indicator must NEVER wrap onto its own line (refinement brief, requirement 1) —
    .ynMain's flex children get an implicit min-width:auto that lets the browser shrink them
    below their content width at this compact scale, which is exactly what wraps a span's
-   text internally. nowrap+hidden forces the whole "YES · 67% ▲3" line to stay one line and
-   clip rather than wrap; the tightened gap/font-sizes below keep it fitting in the common
-   case instead of relying on that clip. */
+   text internally. nowrap+hidden forces the whole "YES · 67%" line to stay one line and clip
+   rather than wrap; the tightened gap/font-sizes below keep it fitting in the common case
+   instead of relying on that clip. */
 .marRow .cardExpand .ynMain{gap:5px;flex-wrap:nowrap;white-space:nowrap;overflow:hidden;max-width:100%;}
 .marRow .cardExpand .ynBtn .side{font:600 17px/1 var(--font-ui);}
 .marRow .cardExpand .ynBtn .sep{font:600 17px/1 var(--font-ui);}
 .marRow .cardExpand .ynBtn .px{font:600 18px/1 var(--font-ui);}
-.marRow .cardExpand .ynMain .mov{font:600 14px/1 var(--font-ui);}
-.marRow .cardExpand .ynSub{min-height:15px;}
+/* Refinement: movement moved off the primary line onto the secondary one, grouped with the
+   multiplier as one unit — "1.49x ▲3". The nowrap/clip guard that used to protect .ynMain's
+   line (above) moves here with it, since .ynSub is now the line that can grow; .ynMain no
+   longer carries the movement span at all, so it no longer needs the same crowding concern.
+   Position-only change, per the correction pass: font sizes below are untouched from what
+   they were pre-refinement (.mult was already 13px in .ynSub; .mov is still the same 14px it
+   was when it lived in .ynMain — moving lines must not also shrink type). Gap stays at the
+   base .ynSub value (8px, inherited — no override here), same as before this refinement. */
+.marRow .cardExpand .ynSub{min-height:15px;flex-wrap:nowrap;white-space:nowrap;overflow:hidden;max-width:100%;}
 .marRow .cardExpand .ynSub .mult{font:500 13px/1 var(--font-ui);}
+.marRow .cardExpand .ynSub .mov{font:600 14px/1 var(--font-ui);}
 .marRow .cardExpand .amtLbl{margin-top:8px;font-size:13px;}
 .marRow .cardExpand .amt{height:36px;margin-top:4px;padding:0 16px;border-radius:18px;}
 .marRow .cardExpand .amt .val{font:600 17px/1 var(--font-cond);}
@@ -522,8 +544,11 @@ html,body{height:100%;background:#000;overflow:hidden;font-family:var(--font-ui)
 .ynSub .mult{font:500 20px/24px var(--font-ui);color:var(--text-3);font-variant-numeric:tabular-nums;transition:color .2s;}
 /* Movement badge attached to YES only (rule #7) — reuses the base .mov component (§7.7,
    20/26/600) as-is rather than introducing a smaller size; "minor" here means inline and
-   attached to one pill, not a smaller typographic treatment than the rest of the system uses. */
-.ynMain .ynMovSlot{display:inline-flex;}
+   attached to one pill, not a smaller typographic treatment than the rest of the system uses.
+   Refinement: lives on the secondary line now, grouped with the multiplier ("2.0x ▲2"),
+   instead of sharing the primary "YES · 25%" line — see ynBtnHTML/movHTML above and the E05
+   compact overrides below. */
+.ynSub .ynMovSlot{display:inline-flex;}
 .ynBtn.yes{color:var(--yes);}
 .ynBtn.no{color:var(--no);}
 .ynBtn.yes.selected{background:var(--yes-tint);border-color:var(--yes);}
@@ -1286,10 +1311,12 @@ function movHTML(m){
   return `<div class="mov ${m.dir}">${g} ${m.delta}</div>`;
 }
 // Market Detail's YES/NO control (rules #5-7): a two-tier label per pill — primary
-// "YES · 25%" line unchanged in weight/prominence, plus a small muted secondary multiplier
-// beneath it. Movement (m.dir/m.delta reflects the YES-side price move) is attached only to
-// the YES pill, inline and minor — "YES · 25% ▲2" — rather than reviving the old standalone
-// hero badge; Event-level (marRowHTML) remains the primary place for movement emphasis.
+// "YES · 25%" line unchanged in weight/prominence, plus a small muted secondary line that
+// carries the multiplier. Movement (m.dir/m.delta reflects the YES-side price move) is
+// attached only to the YES pill, inline and minor, grouped with the multiplier on that
+// secondary line — "2.0x ▲2" beneath "YES · 25%" — rather than crowding the primary line or
+// reviving the old standalone hero badge; Event-level (marRowHTML) remains the primary place
+// for movement emphasis.
 // `id`/`focused` are only passed for focusable variants (browse-only, ready-not-addMode);
 // halted and addMode variants omit them, matching the pre-multiplier markup exactly.
 function ynBtnHTML(m, side, opts){
@@ -1299,8 +1326,8 @@ function ynBtnHTML(m, side, opts){
   const idAttr = opts.id ? ` id="${opts.id}"` : '';
   const movSlot = side==='yes' ? `<span class="ynMovSlot" id="ynYesMov">${movHTML(m)}</span>` : '';
   return `<div class="${cls}"${idAttr}>
-    <div class="ynMain"><span class="side">${side==='yes'?'YES':'NO'}</span><span class="sep">·</span><span class="px">${cents}%</span>${movSlot}</div>
-    <div class="ynSub"><span class="mult">${multFor(cents)}</span></div>
+    <div class="ynMain"><span class="side">${side==='yes'?'YES':'NO'}</span><span class="sep">·</span><span class="px">${cents}%</span></div>
+    <div class="ynSub"><span class="mult">${multFor(cents)}</span>${movSlot}</div>
   </div>`;
 }
 // Positions belong to the account: invisible while signed out (AUTH.md §3, State 1)
