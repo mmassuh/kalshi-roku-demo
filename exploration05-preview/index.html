@@ -1,6 +1,18 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<style>html:not(.e03-unlocked) body{visibility:hidden}</style>
+<script>
+(function(){
+  try {
+    if (sessionStorage.getItem('e03gate') === '1') {
+      document.documentElement.classList.add('e03-unlocked');
+    }
+  } catch(e){}
+})();
+</script>
+
+
 <meta charset="UTF-8">
 <title>Kalshi · Roku Prototype — exploration03</title>
 <style>
@@ -295,9 +307,35 @@ html,body{height:100%;background:#000;overflow:hidden;font-family:var(--font-ui)
    is a JS-measured pin of .cardExpandInner.scrollHeight (see syncExpandHeight) — any padding
    added here is automatically included, no other change needed. Top padding only needed to
    go from 8 to 12 (YES/NO's own outline was ~1px short of the existing slack there;
-   Amount/CTA have plenty of headroom above regardless). */
-.marRow .cardExpand .cardExpandInner{padding:12px 18px 16px;}
-.marRow .cardExpand .yesno{margin-top:0;gap:8px;}
+   Amount/CTA have plenty of headroom above regardless).
+   Hierarchy-correction pass: growing YES/NO's own text (23->30px) first looked like it
+   needed MORE horizontal inset (widening 18->28px), but that was backwards — the two pills
+   were overflowing their own row's box already (measured: their combined natural width
+   exceeded the row by ~40px), so shrinking the row further only made it worse. The actual
+   fix is a width BUDGET: with the full-width CTA's own focus-safe math (~13px inset needed
+   at its size) as the binding constraint, 14px horizontal inset is enough for every child —
+   the pills' own internal spacing (padding/gap, below) was tightened to fit inside that
+   budget instead. */
+.marRow .cardExpand .cardExpandInner{padding:12px 15px 16px;}
+/* Gutter-reduction pass: cardExpandInner's own 15px horizontal inset is left untouched here
+   — it's the binding focus-safe constraint for the FULL-WIDTH children (.amt, .ctaWrap),
+   whose scale(1.04) growth spans the whole row and was already measured at only ~1.15px of
+   safety margin at 15px (see the focus-safe inset note above); shrinking it further would
+   clip Amount/CTA's own focus ring, which this pass must not touch (rule #6).
+   YES/NO (half-width pills) don't need that much — their scale growth is smaller in absolute
+   px — so .yesno gets its OWN, independently-tuned inset via a small negative horizontal
+   margin (-1px each side) that pulls the pills 1px further out than cardExpandInner's shared
+   padding alone would allow, without moving .amt/.ctaWrap at all. Chosen by sweeping the
+   effective inset down from 15px and re-running focusClipCheck against .cardExpand each step:
+   12px genuinely clipped both pills' outlines, 13px cleared by only ~1px (too thin given
+   anti-aliasing — rule #2's own concern), 14px (this rule's net effective inset, 15-1) cleared
+   by a comfortable ~3px, matching this file's established safety margin elsewhere. A literal
+   ~50% cut of the original 15px gutter (down to ~7-8px) clips outright regardless of pill
+   width — the floor here is set by the existing 4px outline + 3px offset + scale(1.04)
+   treatment at this pill size, not by an arbitrary padding choice, so 1px (not 7-8px) is the
+   real safely-recoverable amount without changing that focus treatment itself (out of scope
+   for this pass). */
+.marRow .cardExpand .yesno{margin:0 -1px 0;gap:8px;}
 /* Typography-hierarchy pass 2 ("fix for real"): the first pass (17/17/18 -> 20/20/22) was
    judged too subtle at real 1920x1080 scale against the COLLAPSED row's own reference type
    (.pct is 26px, .mult is 20px there — see base rules above) — the expanded primary line was
@@ -305,52 +343,78 @@ html,body{height:100%;background:#000;overflow:hidden;font-family:var(--font-ui)
    collapsed row's 26px .pct as the literal target for the expanded probability number, and
    reclaims MORE internal padding/gap (not geometry) to fit it in the same 48px pill: padding
    3px->2px vertical, .ynBtn's own gap 2px->1px. Geometry (min-height, horizontal padding,
-   border-radius, the focus-safe inset) is unchanged. */
-.marRow .cardExpand .ynBtn{min-height:48px;padding:2px 10px;border-radius:24px;gap:1px;}
-/* Movement indicator must NEVER wrap onto its own line (refinement brief, requirement 1) —
-   .ynMain's flex children get an implicit min-width:auto that lets the browser shrink them
-   below their content width at this compact scale, which is exactly what wraps a span's
-   text internally. nowrap+hidden forces the whole "YES · 67%" line to stay one line and clip
-   rather than wrap; the tightened gap/font-sizes below keep it fitting in the common case
-   instead of relying on that clip.
-   Typography-hierarchy pass 2: YES/NO + probability are the PRIMARY decision controls and
-   must clearly dominate — 20/20/22 (pass 1) -> 23/23/26, with .px (the probability, the
-   number a viewer actually decides on) matched directly to the collapsed row's own .pct
-   size (26px) so the expanded state reads with the same confidence as the row it replaces. */
-.marRow .cardExpand .ynMain{gap:4px;flex-wrap:nowrap;white-space:nowrap;overflow:hidden;max-width:100%;}
-.marRow .cardExpand .ynBtn .side{font:600 23px/1 var(--font-ui);}
-.marRow .cardExpand .ynBtn .sep{font:600 23px/1 var(--font-ui);}
-.marRow .cardExpand .ynBtn .px{font:600 26px/1 var(--font-ui);}
-/* Refinement: movement moved off the primary line onto the secondary one, grouped with the
-   multiplier as one unit — "1.49x ▲3" — and stays there structurally (see ynBtnHTML: the
-   movement span is only ever emitted inside .ynSub's template literal, never .ynMain's; a
-   live tick only ever replaces #ynYesMov's innerHTML in place — see updateCardMarketRow/
-   updateDetailLive — so there is no code path, initial render or live-patched, that can put
-   it back on the primary line). The nowrap/clip guard that used to protect .ynMain's line
-   moves here with it, since .ynSub is now the line that can grow.
-   Typography-hierarchy pass 2: multiplier + movement get a smaller further bump (15/16 ->
-   16/17) than the primary line above — real, but deliberately modest so they stay clearly
-   secondary to "YES · 50%". */
+   border-radius, the focus-safe inset) is unchanged.
+   Breathing-room pass: the 1px row-gap above (row1 "YES" to row2's metadata line) read as
+   cramped — practically touching — once the two rows became independently meaningful lines
+   rather than a tight primary+caption pair. Reworked as a GROUP that's vertically centered in
+   a taller pill (52->56px, a small increase per the brief) with a real 5px gap between rows,
+   instead of a near-zero gap plus unused pill padding — same total pill height budget, just
+   spent where it's visible. Horizontal padding (7->8px) and radius (26->28px, kept at
+   height/2 so the pill stays fully rounded) grew to match, both still well inside the width
+   the wider pill (see .yesno above) and the now-single-word row 1 can spare — row 2's own
+   worst-case width (mult+movement+99%) was re-verified to still fit on one line with this
+   padding, not just row 1's shorter "YES"/"NO". */
+.marRow .cardExpand .ynBtn{min-height:56px;padding:3px 8px;border-radius:28px;gap:5px;}
+/* Information-hierarchy pass (structural): row 1 is now the side label ALONE — probability
+   moved down to row 2 (see ynBtnHTML's opts.compact branch) to read as one clean "YES" /
+   "NO" word rather than "YES · 38%". Still nowrap/hidden as defensive clipping (a single
+   3-letter word never needs it in practice, but costs nothing to keep). Size/weight (700
+   26px) is unchanged from the prior pass — already reads as dominant now that nothing else
+   shares its line, no need to grow it further. */
+.marRow .cardExpand .ynMain{flex-wrap:nowrap;white-space:nowrap;overflow:hidden;max-width:100%;}
+.marRow .cardExpand .ynBtn .side{font:700 26px/1 var(--font-ui);}
+/* Row 2 now carries THREE things as one coherent metadata line — multiplier, movement,
+   probability, in that left-to-right order (probability sits rightmost, per spec) — instead
+   of just multiplier+movement. All three share identical family/size/weight/line-height
+   (16px/500, unchanged from the prior pass); color is the ONLY thing that tells them apart:
+   .mult stays muted gray (its own rule below), .mov keeps its existing up/down color classes
+   (untouched — no rule needed here), and .px is deliberately given NO color override, so it
+   simply inherits .ynBtn.yes/.no's green/red the same way the old primary-line .px did one
+   row up. Kept at the same nowrap/hidden discipline as row 1 — clip, never wrap — but see the
+   :empty rule just below for why that clip essentially never fires in practice. */
 .marRow .cardExpand .ynSub{min-height:15px;flex-wrap:nowrap;white-space:nowrap;overflow:hidden;max-width:100%;}
 .marRow .cardExpand .ynSub .mult{font:500 16px/1 var(--font-ui);}
-.marRow .cardExpand .ynSub .mov{font:600 16px/1 var(--font-ui);}
+.marRow .cardExpand .ynSub .mov{font:500 16px/1 var(--font-ui);}
+.marRow .cardExpand .ynSub .px{font:500 16px/1 var(--font-ui);}
+/* ynMovSlot is unconditionally mounted on the YES pill (see ynBtnHTML) so live ticks always
+   have a stable node to patch, even the instant a market has no movement to show — but
+   .ynSub's own flex `gap` (8px, inherited from the base rule) would otherwise still open a
+   gap on both sides of that empty span, leaving an awkward hole between "2.63x" and "38%"
+   exactly when there's nothing to show between them (the case the brief calls out by name).
+   :empty removes it from layout entirely whenever movHTML(m) returned '' — mult and px then
+   sit directly next to each other with one normal gap, no dead space, no JS needed to keep it
+   in sync (the live-tick patch already just swaps this span's innerHTML in place). */
+.marRow .cardExpand .ynSub .ynMovSlot:empty{display:none;}
 /* Typography-hierarchy pass 2: AMOUNT/"To win" stay supporting labels (14 -> 15, a small
    bump) while the amount value and payout value they introduce get a further real increase
    (21 -> 24, 20 -> 23) — still clearly below YES/NO+probability (26px) but strong, matching
    the hierarchy target's #2 tier. */
-.marRow .cardExpand .amtLbl{margin-top:8px;font-size:15px;}
-.marRow .cardExpand .amt{height:36px;margin-top:4px;padding:0 16px;border-radius:18px;}
+.marRow .cardExpand .amtLbl{margin-top:5px;font-size:15px;}
+/* Hierarchy-correction pass: Amount selector grown again, 40 -> 48px (+20%, the top of the
+   requested +15-20% range) — still reading compressed at 40px. Both .amt and .btn use the
+   base .amt/.btn's own display:flex;align-items:center;justify-content:* (see base rules),
+   so $25 and the CTA label re-center automatically as the box grows — verified by measuring
+   the value's actual box vs its container's box, not assumed from line-height. margin-top
+   trimmed by 1px as a token reclaim; the rest of the added height is real, reported growth
+   (see cardExpandInner), not compressed back out. */
+.marRow .cardExpand .amt{height:48px;margin-top:1px;padding:0 16px;border-radius:24px;}
 .marRow .cardExpand .amt .val{font:600 24px/1 var(--font-cond);}
 .marRow .cardExpand .amt .stepGlyph{font-size:17px;width:22px;}
-.marRow .cardExpand .payout{margin-top:6px;}
+.marRow .cardExpand .payout{margin-top:3px;}
 .marRow .cardExpand .payout .lbl{font-size:15px;}
 .marRow .cardExpand .payout .val{font-size:23px;}
-.marRow .cardExpand .ctaWrap{margin-top:8px;}
+.marRow .cardExpand .ctaWrap{margin-top:5px;}
 /* Typography-hierarchy pass 2: CTA text further increased (18 -> 20) for TV readability as a
    primary action — clearly below YES/NO+probability and the amount/payout values, clearly
-   above the multiplier/movement/label tier. Button height unchanged (40px). */
-.marRow .cardExpand .btn{height:40px;font-size:20px;border-radius:20px;}
+   above the multiplier/movement/label tier.
+   Hierarchy-correction pass: CTA height grown again, 44 -> 52px (+18%, inside the requested
+   +15-20% range) — still reading too thin. font-size unchanged (20px) — still clearly below
+   YES/NO's 30px so it never outweighs the decision controls, just taller/more present. */
+.marRow .cardExpand .btn{height:52px;font-size:20px;border-radius:26px;}
 .marRow .cardExpand .warnLine{font-size:13px;margin-top:5px;}
+.marRow .cardExpand .insufficientBox{margin-top:5px;padding:8px 10px;border-radius:6px;}
+.marRow .cardExpand .insufficientTitle{font-size:18px;line-height:22px;}
+.marRow .cardExpand .insufficientSub{font-size:14px;line-height:18px;margin-top:2px;}
 .marRow .cardExpand .banner{margin-top:8px;padding:6px 10px;font-size:13px;line-height:18px;}
 .marRow .cardExpand .dHalted{font:400 16px/22px var(--font-ui);color:var(--text-2);}
 /* Selecting/stepping never resizes .cardExpand out from under its own transition — see
@@ -603,6 +667,17 @@ html,body{height:100%;background:#000;overflow:hidden;font-family:var(--font-ui)
 .banner{margin-top:20px;border-radius:8px;background:rgba(255,225,77,.16);border-left:3px solid var(--warn);padding:14px 16px;font:400 22px/28px var(--font-ui);color:var(--text-1);opacity:1;transition:opacity .6s;}
 .banner.fade{opacity:0;}
 
+/* Insufficient-balance state — a status, not an action, so it reuses the app's existing
+   warning-banner treatment (tint fill + left border, same as .banner above) instead of
+   button chrome. Title carries the emphasis; the recovery copy underneath is intentionally
+   smaller/lighter so it reads as subordinate. */
+/* Correction pass: this is informational recovery guidance, not an action — it never
+   receives D-pad focus (see cardTradeKey/detailKey's insufficient-balance gate), so it
+   carries no .focused treatment. */
+.insufficientBox{margin-top:16px;border-radius:8px;background:rgba(255,225,77,.16);border-left:3px solid var(--warn);padding:14px 16px;}
+.insufficientTitle{font:700 26px/32px var(--font-ui);color:var(--warn);}
+.insufficientSub{margin-top:4px;font:400 20px/26px var(--font-ui);color:var(--warn);opacity:.8;}
+
 .ctaWrap{margin-top:24px;}
 .dMeta{margin-top:20px;font:400 20px/26px var(--font-ui);color:var(--text-3);display:flex;gap:16px;}
 
@@ -781,51 +856,60 @@ html,body{height:100%;background:#000;overflow:hidden;font-family:var(--font-ui)
 .resultActions{display:flex;flex-direction:column;gap:12px;width:100%;margin-top:8px;}
 .successBody .sub{font-size:20px;color:var(--text-3);}
 </style>
-<style id="gatePwStyle">
-  body.gate-locked > *:not(#gatePwOverlay) { display: none !important; }
-  #gatePwOverlay { position: fixed; inset: 0; background: #0b0f0c; color: #eafff2; display: flex;
-    align-items: center; justify-content: center; font-family: -apple-system, sans-serif; z-index: 999999; }
-  #gatePwOverlay .box { background: #131a15; border: 1px solid #2a3a2f; border-radius: 12px; padding: 32px 36px; width: 320px; }
-  #gatePwOverlay h2 { margin: 0 0 16px; font-size: 18px; }
-  #gatePwOverlay input { width: 100%; box-sizing: border-box; padding: 10px 12px; border-radius: 8px;
-    border: 1px solid #2a3a2f; background: #0b0f0c; color: #eafff2; font-size: 15px; margin-bottom: 12px; }
-  #gatePwOverlay button { width: 100%; padding: 10px 12px; border-radius: 8px; border: none;
-    background: #22c55e; color: #05170c; font-weight: 600; font-size: 15px; cursor: pointer; }
-  #gatePwOverlay .err { color: #ff8a8a; font-size: 13px; margin: -4px 0 12px; display: none; }
-</style>
-<script>
-  (function(){
-    var GATE_PW = "UXTeam";
-    if (sessionStorage.getItem('gateOk') === '1') return;
-    document.documentElement.classList.add('gate-pending');
-    document.addEventListener('DOMContentLoaded', function(){
-      document.body.classList.add('gate-locked');
-      var overlay = document.createElement('div');
-      overlay.id = 'gatePwOverlay';
-      overlay.innerHTML = '<div class="box"><h2>Enter password</h2>' +
-        '<div class="err" id="gatePwErr">Incorrect password.</div>' +
-        '<input type="password" id="gatePwInput" placeholder="Password" autofocus />' +
-        '<button id="gatePwBtn">Unlock</button></div>';
-      document.body.appendChild(overlay);
-      function tryUnlock(){
-        var v = document.getElementById('gatePwInput').value;
-        if (v === GATE_PW) {
-          sessionStorage.setItem('gateOk', '1');
-          document.body.classList.remove('gate-locked');
-          overlay.remove();
-        } else {
-          document.getElementById('gatePwErr').style.display = 'block';
-        }
-      }
-      document.getElementById('gatePwBtn').addEventListener('click', tryUnlock);
-      document.getElementById('gatePwInput').addEventListener('keydown', function(e){
-        if (e.key === 'Enter') tryUnlock();
-      });
-    });
-  })();
-</script>
 </head>
 <body>
+<script>
+(function(){
+  var GATE_PW = "UXTeam";
+  if (document.documentElement.classList.contains('e03-unlocked')) return;
+  function boot(){
+    var overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;inset:0;z-index:999999;background:#0b0f14;display:flex;align-items:center;justify-content:center;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;visibility:visible;';
+    overlay.innerHTML =
+      '<form id="e03gateForm" style="text-align:center;color:#fff;">' +
+        '<div style="font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:#8a97a6;margin-bottom:14px;">Private preview</div>' +
+        '<input id="e03gateInput" type="password" autocomplete="off" ' +
+          'style="font-size:18px;padding:12px 16px;border-radius:8px;border:1px solid #2a333d;background:#151b22;color:#fff;width:220px;text-align:center;outline:none;display:block;margin:0 auto;" ' +
+          'placeholder="Password" />' +
+        '<button id="e03gateBtn" type="submit" ' +
+          'style="margin-top:12px;font-size:14px;font-weight:600;padding:10px 22px;border-radius:8px;border:none;background:#28CC95;color:#0b0f14;cursor:pointer;">Enter</button>' +
+        '<div id="e03gateErr" style="color:#ff4d6a;font-size:13px;margin-top:10px;height:16px;"></div>' +
+      '</form>';
+    document.body.appendChild(overlay);
+    document.body.style.visibility = 'visible';
+    var form = overlay.querySelector('#e03gateForm');
+    var input = overlay.querySelector('#e03gateInput');
+    var err = overlay.querySelector('#e03gateErr');
+    input.addEventListener('keydown', function(e){
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        if (form.requestSubmit) { form.requestSubmit(); }
+        else { form.dispatchEvent(new Event('submit', {bubbles:true, cancelable:true})); }
+      }
+    });
+    form.addEventListener('submit', function(e){
+      e.preventDefault();
+      if (input.value === GATE_PW) {
+        try { sessionStorage.setItem('e03gate','1'); } catch(e){}
+        document.documentElement.classList.add('e03-unlocked');
+        overlay.remove();
+      } else {
+        err.textContent = 'Incorrect password';
+        input.value = '';
+        input.focus();
+      }
+    });
+    setTimeout(function(){ input.focus(); }, 50);
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', boot);
+  } else {
+    boot();
+  }
+})();
+</script>
+
+
 <div id="scaler">
   <!-- VIDEO -->
   <div id="videoArea">
@@ -1340,12 +1424,30 @@ function movHTML(m){
 // for movement emphasis.
 // `id`/`focused` are only passed for focusable variants (browse-only, ready-not-addMode);
 // halted and addMode variants omit them, matching the pre-multiplier markup exactly.
+// `opts.compact` (E05 in-place hierarchy pass): the standalone Market Detail screen keeps the
+// two-tier shape above verbatim — this flag is never passed from renderDetail's own call
+// sites. E05's in-place Quick Order pills (cardExpandBodyHTML's calls only) instead use a
+// structurally different layout: row 1 is the side label alone ("YES"/"NO", nothing else —
+// no separator, no percentage), and row 2 carries multiplier + movement + probability
+// together as one same-weight metadata line, color the only thing telling them apart (.mult
+// stays muted gray, .mov keeps its existing up/down color, .px is left with NO explicit color
+// override so it simply inherits .ynBtn.yes/.no's own green/red — same mechanism the old
+// primary-line .px relied on, just applied one level down). This is a real DOM change (.px
+// moves out of .ynMain into .ynSub), not just a restyle, so it has to be a template branch,
+// not a CSS override like every earlier compact pass — see the .marRow .cardExpand-scoped
+// rules for row 2's shared typography and the empty-movSlot collapse.
 function ynBtnHTML(m, side, opts){
   opts = opts || {};
   const cents = side==='yes'? m.yes : m.no;
   const cls = ['ynBtn', side, opts.selected?'selected':'', opts.focused?'focused':''].filter(Boolean).join(' ');
   const idAttr = opts.id ? ` id="${opts.id}"` : '';
   const movSlot = side==='yes' ? `<span class="ynMovSlot" id="ynYesMov">${movHTML(m)}</span>` : '';
+  if (opts.compact){
+    return `<div class="${cls}"${idAttr}>
+    <div class="ynMain"><span class="side">${side==='yes'?'YES':'NO'}</span></div>
+    <div class="ynSub"><span class="mult">${multFor(cents)}</span>${movSlot}<span class="px">${cents}%</span></div>
+  </div>`;
+  }
   return `<div class="${cls}"${idAttr}>
     <div class="ynMain"><span class="side">${side==='yes'?'YES':'NO'}</span><span class="sep">·</span><span class="px">${cents}%</span></div>
     <div class="ynSub"><span class="mult">${multFor(cents)}</span>${movSlot}</div>
@@ -2142,14 +2244,14 @@ function cardExpandBodyHTML(mk, ct){
                : mk.status==='settled' ? 'This market has settled.'
                : (mk.closes||'This market has closed.');
     return `<div class="dHalted">${esc(line)}</div>
-      <div class="disabledZone"><div class="yesno">${ynBtnHTML(mk,'yes',{})}${ynBtnHTML(mk,'no',{})}</div></div>
+      <div class="disabledZone"><div class="yesno">${ynBtnHTML(mk,'yes',{compact:true})}${ynBtnHTML(mk,'no',{compact:true})}</div></div>
       <div class="ctaWrap"><div class="btn btnSecondary ${ct.focus==='cta'?'focused':''}" id="ctCtaBtn">Close</div></div>`;
   }
   if (S.auth!=='ready'){
     // Same State-1 browse-only shape as Detail: prices comparable, nothing to size yet.
     return `<div class="yesno">
-        ${ynBtnHTML(mk,'yes',{focused:ct.focus==='yes', id:'ctYes'})}
-        ${ynBtnHTML(mk,'no',{focused:ct.focus==='no', id:'ctNo'})}
+        ${ynBtnHTML(mk,'yes',{focused:ct.focus==='yes', id:'ctYes', compact:true})}
+        ${ynBtnHTML(mk,'no',{focused:ct.focus==='no', id:'ctNo', compact:true})}
       </div>
       <div class="ctaWrap"><div class="btn btnPrimary ${ct.focus==='cta'?'focused':''}" id="ctCtaBtn">Sign in to trade</div></div>`;
   }
@@ -2161,8 +2263,10 @@ function cardExpandBodyHTML(mk, ct){
   const px = sideSel==='no'? mk.no : mk.yes;
   let ctaHTML;
   if (insufficient){
-    ctaHTML = `<div class="warnLine">Balance ${fmt$(S.balance)} — add funds on kalshi.com or the Kalshi app.</div>
-      <div class="ctaWrap"><div class="btn btnSecondary ${ct.focus==='cta'?'focused':''}" id="ctCtaBtn">Insufficient balance</div></div>`;
+    ctaHTML = `<div class="ctaWrap"><div class="insufficientBox" id="ctCtaBtn">
+        <div class="insufficientTitle">Insufficient balance</div>
+        <div class="insufficientSub">Add funds on kalshi.com or the Kalshi app, or choose a lower amount.</div>
+      </div></div>`;
   } else {
     // E05 spec (unlike Detail's own CTA, which labels itself "Buy Yes · 8¢"): this CTA is
     // always literally "Review Order" once enabled — it never states price/side itself,
@@ -2175,8 +2279,8 @@ function cardExpandBodyHTML(mk, ct){
     ctaHTML = `<div class="ctaWrap"><div class="btn btnPrimary ${sideSel==='no'?'noSide':''} ${ctaEnabled?'':'disabled'} ${ct.focus==='cta'?'focused':''}" id="ctCtaBtn">${label}</div></div>`;
   }
   const yesnoHTML = `<div class="yesno">
-      ${ynBtnHTML(mk,'yes',{selected:sideSel==='yes', focused:ct.focus==='yes', id:'ctYes'})}
-      ${ynBtnHTML(mk,'no',{selected:sideSel==='no', focused:ct.focus==='no', id:'ctNo'})}
+      ${ynBtnHTML(mk,'yes',{selected:sideSel==='yes', focused:ct.focus==='yes', id:'ctYes', compact:true})}
+      ${ynBtnHTML(mk,'no',{selected:sideSel==='no', focused:ct.focus==='no', id:'ctNo', compact:true})}
     </div>`;
   const bannerHTML = ct.banner
     ? `<div class="banner" id="ctBanner">Price moved: ${ct.banner.from}¢ → ${ct.banner.to}¢. Review and confirm again.</div>` : '';
@@ -2444,8 +2548,11 @@ function cardTradeKey(ok,back,dir){
     else if (dir==='right'){ if(ct.amtIdx<AMOUNTS.length-1){ moveCardTradeAmount(1, mk); pressGlyph('ctStepR'); } else bounce('#ctAmtField','x'); }
     else if (dir==='up'){ moveCardTradeFocus(ct.side==='no'?'no':'yes'); }
     else if (dir==='down'||ok){
-      if (ct.side){ moveCardTradeFocus('cta'); }
-      else if (dir==='down'){ bounce('#ctAmtField','y'); }   // CTA disabled → unfocusable
+      // Insufficient balance is a status, not an action (correction pass): the CTA zone
+      // is unfocusable whenever it would render as the insufficientBox, exactly like the
+      // pre-existing "no side selected yet" case just below.
+      if (!insufficient){ moveCardTradeFocus('cta'); }
+      else if (dir==='down'){ bounce('#ctAmtField','y'); }   // Insufficient balance → unfocusable
     }
   }
   else if (ct.focus==='cta'){
@@ -2587,8 +2694,10 @@ function renderDetail(back){
     const px = sideSel==='no'? m.no : m.yes;
     let ctaHTML;
     if (insufficient){
-      ctaHTML = `<div class="warnLine">Balance ${fmt$(S.balance)} — add funds on kalshi.com or the Kalshi app.</div>
-        <div class="ctaWrap"><div class="btn btnSecondary ${d.focus==='cta'?'focused':''}" id="ctaBtn">Insufficient balance</div></div>`;
+      ctaHTML = `<div class="ctaWrap"><div class="insufficientBox" id="ctaBtn">
+          <div class="insufficientTitle">Insufficient balance</div>
+          <div class="insufficientSub">Add funds on kalshi.com or the Kalshi app, or choose a lower amount.</div>
+        </div></div>`;
     } else {
       const verb = d.addMode ? 'Add' : 'Buy';
       const label = sideSel ? `${verb} ${sideSel==='yes'?'Yes':'No'} · ${px}¢` : 'Choose Yes or No';
@@ -3623,7 +3732,7 @@ function moveDetailFocus(newFocus){
 // Amount stepper (Left/Right on #amtField) patches #amtVal / #stepL / #stepR / #payoutVal in
 // place, reusing tradeNumbers() exactly as renderDetail/updateDetailLive already do. The one
 // case that still needs a full render(): stepping crosses the sufficient/insufficient-balance
-// boundary, which swaps the CTA's own HTML block (btnPrimary+payout vs btnSecondary+warnLine —
+// boundary, which swaps the CTA's own HTML block (btnPrimary+payout vs the insufficientBox —
 // see renderDetail's `insufficient` branch) — a structural change no in-place patch can express,
 // so that case (only) falls back to render(), same scope cut updateDetailLive already documents
 // for a live tick crossing the same boundary.
@@ -3736,7 +3845,12 @@ function detailKey(ok,back,dir){
       if (dir==='left'){ if(d.amtIdx>0){ moveDetailAmount(-1, m); pressGlyph('stepL'); } else bounce('#amtField','x'); }
       else if (dir==='right'){ if(d.amtIdx<AMOUNTS.length-1){ moveDetailAmount(1, m); pressGlyph('stepR'); } else bounce('#amtField','x'); }
       else if (dir==='up'){ if(hasPosActions){ moveDetailFocus('posAdd'); } else { d.chevronFrom='amount'; d.ctxIdx=d.ctxAncestry.length-1; moveDetailFocus('chevron'); } }
-      else if (dir==='down'||ok){ moveDetailFocus('cta'); }
+      else if (dir==='down'||ok){
+        // Insufficient balance is a status, not an action (correction pass): CTA is
+        // unfocusable whenever it would render as the insufficientBox.
+        if (!insufficient){ moveDetailFocus('cta'); }
+        else if (dir==='down'){ bounce('#amtField','y'); }
+      }
     } else { // cta
       if (dir==='up'){ moveDetailFocus('amount'); }
       else if (dir==='left'||dir==='right'){ bounce('#ctaBtn','x'); }
@@ -3774,8 +3888,11 @@ function detailKey(ok,back,dir){
     }
     else if (dir==='up'){ moveDetailFocus(d.side==='no'?'no':'yes'); }
     else if (dir==='down'||ok){
-      if (d.side){ moveDetailFocus('cta'); }
-      else if (dir==='down'){ bounce('#amtField','y'); }  // CTA disabled → unfocusable
+      // Insufficient balance is a status, not an action (correction pass): the CTA zone
+      // is unfocusable whenever it would render as the insufficientBox, exactly like the
+      // pre-existing "no side selected yet" case just below.
+      if (!insufficient){ moveDetailFocus('cta'); }
+      else if (dir==='down'){ bounce('#amtField','y'); }  // Insufficient balance → unfocusable
     }
   }
   else if (d.focus==='cta'){
@@ -4370,7 +4487,7 @@ function updateDetailLive(m, move){
     // it could silently go stale while the rest of the screen was current. Patched here
     // in place (textContent only). One deliberate scope cut: if this tick would flip the
     // sufficient/insufficient balance boundary, the CTA (different button style, a
-    // warnLine appearing/disappearing) is left as-is rather than reconstructed — that's a
+    // insufficientBox appearing/disappearing) is left as-is rather than reconstructed — that's a
     // structural change, which this targeted fix intentionally does not perform; a normal
     // navigation/interaction still re-renders it correctly, exactly as before this pass.
     const ctaBtn = $('#ctaBtn');
