@@ -2516,7 +2516,11 @@ function renderPositions(){
   // Balance" bug was.
   const ctxFocusedIdx = S.posCtxFocus && !S.hdrActive ? S.posCtxIdx : -1;
   $('#pBody').innerHTML = `<div class="screen ${animCls()}" id="positionsScreen">${ctxNavHTML(S.positionsCtx, true, ctxFocusedIdx)}${content}</div>`;
-  if (!S.positionsLoading && positions.length && S.auth==='ready') scrollPositionsToFocus();
+  // instant on the loading->ready swap (justLoaded) -- the fresh #listInner just mounted
+  // by the innerHTML write above must not replay its scroll-into-view as a visible slide
+  // (see applyScrollTransform); real Up/Down navigation (movePositionsFocus) keeps the
+  // normal animated scroll untouched.
+  if (!S.positionsLoading && positions.length && S.auth==='ready') scrollPositionsToFocus(justLoaded);
 }
 // Priority 0 — same targeted-focus pattern as moveListFocus(), for the Positions list.
 function movePositionsFocus(newIdx){
@@ -2528,17 +2532,33 @@ function movePositionsFocus(newIdx){
   const neu = rows[newIdx]; if (neu) neu.classList.add('focused');
   scrollPositionsToFocus();
 }
-function scrollPositionsToFocus(){
+// Shared "Skeleton -> Content" crossfade-stability helper: applies a scroll-position
+// transform without letting the element's own CSS `transition:transform` replay it as a
+// spurious slide. Needed specifically right after a full innerHTML rebuild remounts a
+// scrollable track/list from scratch (the loading->ready swap, and any later full re-render
+// while already scrolled) -- a freshly created element has no real "previous frame" for the
+// transition to animate from, so setting `transform` on it directly still visibly slides in.
+// Mirrors the existing #cardTrack fix (scrollCardsToFocus's own `instant` argument) so every
+// skeleton destination with internal scroll shares one mechanism for "once visible, don't
+// move again" (see scrollPositionsToFocus/scrollMarketsToFocus below).
+function applyScrollTransform(el, value, instant){
+  if (!instant){ el.style.transform = value; return; }
+  el.style.transition = 'none';
+  el.style.transform = value;
+  void el.offsetHeight;                  // flush, so re-enabling transition below can't retro-animate this jump
+  el.style.transition = '';
+}
+function scrollPositionsToFocus(instant){
   const inner = $('#listInner');
   if (!inner) return;
   const rows = inner.querySelectorAll('.mrow');
   const wrap = $('#listWrap');
   if (!rows.length || !wrap) return;
   const viewH = wrap.clientHeight, rowH = 104, total = rows.length*rowH;
-  if (total<=viewH){ inner.style.transform='none'; return; }
+  if (total<=viewH){ applyScrollTransform(inner, 'none', instant); return; }
   let off = S.posRowIdx*rowH - (viewH/2 - rowH/2);
   off = Math.max(0, Math.min(off, total-viewH));
-  inner.style.transform = `translateY(${-off}px)`;
+  applyScrollTransform(inner, `translateY(${-off}px)`, instant);
 }
 
 /* ============================================================
@@ -2600,22 +2620,34 @@ function marRowHTML(mk, focused, variant, dotColor, cardTrade){
 }
 // ---------- "Skeleton Loading" pass: ExpandedMarketSkeleton (task §5) ----------
 // Anticipates the real cardExpandBodyHTML's default (nothing selected yet) shape one-for-
-// one — YES/NO pair, Amount stepper, To-win row, CTA — at the SAME sizes (92px pills, 72px
-// amount/CTA controls) so the wrapper's measured height barely moves when the real content
-// swaps in (task §13), and so it obeys the exact same expanded-Market scroll/visibility
-// rules (SAFE_INSET, no bottom clipping) the real content does — nothing scroll-related
-// needs to know the difference.
+// one — YES/NO pair, Amount stepper, To-win row, CTA — sized to match the REAL, .cardExpand-
+// SCOPED geometry (not the unscoped/Detail-screen .ynBtn/.amt/.btn sizes) so the wrapper's
+// measured height doesn't move when the real content swaps in (task §13), and so it obeys
+// the exact same expanded-Market scroll/visibility rules (SAFE_INSET, no bottom clipping)
+// the real content does — nothing scroll-related needs to know the difference.
+// Crossfade-geometry fix: the numbers here previously used the base/unscoped .ynBtn(92px)/
+// .amt(72px)/.btn(72px) sizes, which are NOT what actually renders inside an expanded Market
+// row — `.marRow .cardExpand .ynBtn{min-height:66px}`, `.marRow .cardExpand .amt{height:48px;
+// margin-top:1px}` and `.marRow .cardExpand .btn{height:52px}` (all more specific, cardExpand-
+// scoped overrides) are what the real content actually gets. The payout row also had an
+// inline `style="margin-top:20px"` that outranked (by specificity) the correct scoped
+// `.marRow .cardExpand .payout{margin-top:3px}` rule the real content relies on with NO
+// inline override — removed below so the skeleton picks up the same CSS rule the real
+// content does, rather than fighting it. Together these were the real source of the ~58px
+// instant snap on the loading->ready swap (not the transition mechanism, already fixed) —
+// this pass corrects the placeholder sizes/margins to match, so the row's own measured
+// height (and therefore syncExpandHeight/scrollMarketsToFocus's target) barely changes.
 function expandedMarketSkeletonHTML(){
   return `<div class="yesno">
-      ${skelPill('auto','92px').replace('style="', 'style="flex:1;')}
-      ${skelPill('auto','92px').replace('style="', 'style="flex:1;')}
+      ${skelPill('auto','66px').replace('style="', 'style="flex:1;')}
+      ${skelPill('auto','66px').replace('style="', 'style="flex:1;')}
     </div>
     <div>
-      <div class="amtLbl">${skelLine('90px','16px')}</div>
-      <div style="margin-top:8px;">${skelPill('100%','72px')}</div>
-      <div class="payout" style="margin-top:20px;">${skelLine('60px','16px')}${skelLine('64px','20px')}</div>
+      <div class="amtLbl">${skelLine('90px','24px')}</div>
+      <div style="margin-top:1px;">${skelPill('100%','48px')}</div>
+      <div class="payout">${skelLine('60px','28px')}${skelLine('64px','48px')}</div>
     </div>
-    <div class="ctaWrap">${skelPill('100%','72px')}</div>`;
+    <div class="ctaWrap">${skelPill('100%','52px')}</div>`;
 }
 // ---------- E05: expanded-Market body (in-place Quick Order) ----------
 // Deliberately mirrors renderDetail's three branches (halted / anonymous / fully
@@ -2748,7 +2780,13 @@ function syncExpandHeight(mId, animate){
     wrap.style.height = target+'px';
     void wrap.offsetHeight;               // flush, so re-enabling transition below can't retro-animate this jump
     wrap.style.transition = '';
-    scrollMarketsToFocus();
+    // instant:true — this branch runs on every re-render while the Market stays expanded
+    // (including the loading->ready swap, which fully remounts .marTrack from scratch); a
+    // freshly mounted track has no real "previous frame", so a plain transform assignment
+    // here would replay the vertical scroll-into-view as a spurious slide (see
+    // applyScrollTransform). Real Up/Down-driven scrolling (moveMarketRowFocus etc., which
+    // never remounts the track) keeps its normal animated scrollMarketsToFocus() calls.
+    scrollMarketsToFocus(true);
   }
 }
 // Collapse: reverse of the open animation — pin the wrapper back to height:0 (transition
@@ -2796,7 +2834,7 @@ function collapseCardTrade(afterCollapse){
 // version — measures real getBoundingClientRect geometry rather than assuming a fixed row
 // height, since an expanded row's height changes with its content (banner, insufficient
 // warning) and mid-animation.
-function scrollMarketsToFocus(){
+function scrollMarketsToFocus(instant){
   const activeCard = document.querySelector('#cardTrack .evCard.active');
   const wrap = activeCard ? activeCard.querySelector('.marketsList') : null;
   const track = wrap ? wrap.querySelector('.marTrack') : null;
@@ -2885,7 +2923,7 @@ function scrollMarketsToFocus(){
   // applied offset UP costs at most ~1 raw px of extra scroll (invisible at TV distance) but
   // guarantees the target's edge always clears fully rather than landing a hair short of it.
   const newOff = Math.ceil(Math.max(0, Math.min(curOff + delta, Math.max(0, total - viewH))));
-  track.style.transform = newOff>0 ? `translateY(${-newOff}px)` : 'none';
+  applyScrollTransform(track, newOff>0 ? `translateY(${-newOff}px)` : 'none', instant);
   track.dataset.off = String(newOff);
 }
 const CARD_TRADE_FOCUS_SEL = {yes:'#ctYes', no:'#ctNo', amount:'#ctAmtField', cta:'#ctCtaBtn'};
