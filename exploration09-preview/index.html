@@ -146,6 +146,58 @@
   --attn:#FF9500;
   --info:#408FFF;
   --err:#FF4D6A;
+
+  /* ---------- Trading semantics (YES/NO) — decoupled from Brand ----------
+     exploration09 color-refinement pass: --yes/--no above stay exactly as they were —
+     stable roots, never theme-overridden — so the handful of non-trading, non-brand
+     accents that already referenced them directly (the LIVE broadcast chip, the
+     destructive Sign-out button) keep rendering identically in every theme, unchanged by
+     this pass. Every GENUINELY trading component (YES/NO buttons, position P&L, settled
+     WON/LOST, price-tick feedback, the trade-confirm CTA) now consumes the tokens below
+     instead. Each defaults to the exact literal value --yes/--no/--yes-tint/etc already
+     had, so Kalshi's rendered trading UI is byte-for-byte unchanged; Roku/Polymarket give
+     these their own values in the theme blocks below — see report for the palette
+     rationale per brand. */
+  --trade-yes:var(--yes);
+  --trade-no:var(--no);
+  --trade-yes-surface:var(--yes-tint);
+  --trade-no-surface:var(--no-tint);
+  --trade-yes-surface-strong:var(--yes-tint-strong);
+  --trade-no-surface-strong:var(--no-tint-strong);
+  --trade-yes-glow:var(--glow-yes);
+  --trade-no-glow:var(--glow-no);
+
+  /* ---------- Primary action semantics (generic CTAs: Sign In, Continue, Confirm, Done,
+     View, Open...) ---------- exploration09 color-refinement pass: .btnPrimary previously
+     hardcoded background:var(--yes), coupling every generic product action to the Yes
+     trading color — Sign In rendered Kalshi mint-green even under Roku/Polymarket. Defaults
+     to Kalshi's exact prior --yes/--on-fill/--glow-yes literals for zero Kalshi change;
+     Roku/Polymarket point these at their own brand purple/blue below. The small number of
+     buttons that ARE a literal trade execution (Buy Yes/No, Review Order, Confirm Order)
+     are marked with an explicit .trade modifier class in the markup and stay on
+     --trade-yes/--trade-no instead — see .btnPrimary.trade rules further down. */
+  --action-primary:var(--yes);
+  --action-primary-text:var(--on-fill);
+  --action-primary-hover:var(--yes-pressed);
+  --action-primary-focus:var(--glow-yes);
+
+  /* ---------- Brand tint — a tinted circle/surface keyed to Brand, not Trading (today:
+     just the header's anonymous "sign in" avatar circle, whose sibling glyph/label already
+     correctly read var(--brand) — the circle itself had been left on --yes-tint, a real
+     small inconsistency this corrects). Defaults to the same literal as --yes-tint. ---------- */
+  --brand-tint:var(--yes-tint);
+
+  /* ---------- System status — Success/Error, decoupled from Trading ----------
+     exploration09 color-refinement pass: the generic "this succeeded" / "this failed"
+     glyphs (device-link success, a list load error, etc.) previously read var(--yes)/
+     var(--yes-tint) and var(--no-tint) directly — architecturally indistinguishable from an
+     actual YES trade. Each defaults to its exact prior literal for zero visual change.
+     --warn/--attn/--info were audited too: both already independent, standalone tokens,
+     never aliased to --brand/--yes/--no anywhere in this file — no correction was needed
+     there. */
+  --success:var(--yes);
+  --success-surface:var(--yes-tint);
+  --err-surface:var(--no-tint);
   /* ---------- Stroke + Fill ---------- */
   --stroke-hair:rgba(255,255,255,.10);
   --stroke-std:rgba(255,255,255,.16);
@@ -211,7 +263,15 @@
   --skel-base:rgba(255,255,255,.06);
   --skel-highlight:rgba(255,255,255,.13);
   /* ---------- Chart line colors ---------- */
-  --chart-1:var(--yes);
+  /* chart-1 (exploration09 color-refinement pass): this is the Event Card's
+     probability-over-time graph — a categorical palette coloring each Market's line/dot
+     (cardGraphColors(), cycled i%5), the same "Market visualization" role as the Market
+     bar (.marRow .barFill, also moved to --brand this pass), not a literal Yes-side
+     indicator. Was var(--yes); now var(--brand) — identical value for Kalshi (--brand IS
+     --yes there), but now correctly follows Roku purple/Polymarket blue instead of staying
+     stuck on Kalshi green (Polymarket's own theme block already made this exact choice
+     independently — see its --chart-1 override below, now redundant but left in place). */
+  --chart-1:var(--brand);
   --chart-2:var(--info);
   --chart-3:var(--warn);
   --chart-4:var(--attn);
@@ -333,10 +393,12 @@ html[data-theme="roku"]{
   --skel-base:rgba(102,45,145,.10);
   --skel-highlight:rgba(102,45,145,.22);
 
-  /* Chart colors intentionally NOT overridden: chart-1 stays var(--yes) so the price line
-     keeps tracking the same Yes/No trading semantics it does for Kalshi — Roku's charts
-     direction ("cleaner, less decoration") is a reduction, not a recolor, and there was no
-     unnecessary decoration token to begin with, so there's nothing to turn down here. */
+  /* Chart colors intentionally not separately overridden here: chart-1 now inherits
+     var(--brand) from :root (exploration09 color-refinement pass), which already resolves
+     to Roku purple in this block — the probability graph follows brand automatically, no
+     Roku-specific line needed. Roku's charts direction ("cleaner, less decoration") is a
+     reduction, not a recolor, and there was no unnecessary decoration token to begin with,
+     so there's nothing else to turn down here. */
 
   /* ---------- Celebration — re-themed to belong to Roku (physics/timing untouched) ---------- */
   --celebration-surface:var(--brand);
@@ -360,6 +422,30 @@ html[data-theme="roku"]{
      need to flip to light/white ink here. */
   --on-brand-ink:#FFFFFF;
   --on-brand-knob:#FFFFFF;
+
+  /* ---------- Trading (YES/NO) — a coherent Roku-native adaptation, not Kalshi's pair
+     reused verbatim and not an "official" Roku trading palette (Roku isn't a prediction
+     market). Keeps the universal green=Yes/red=No convention — the fastest-legible option
+     at TV distance — but shifts both hues warmer/friendlier to belong with Roku's purple,
+     open-typography identity instead of reading as a financial-terminal color. ---------- */
+  --trade-yes:#4CD97B;
+  --trade-no:#FF5A52;
+  --trade-yes-surface:rgba(76,217,123,.16);
+  --trade-no-surface:rgba(255,90,82,.16);
+  --trade-yes-surface-strong:rgba(76,217,123,.24);
+  --trade-no-surface-strong:rgba(255,90,82,.24);
+  --trade-yes-glow:0 0 24px rgba(76,217,123,.45);
+  --trade-no-glow:0 0 24px rgba(255,90,82,.40);
+
+  /* ---------- Primary action — generic CTAs (Sign In, Continue, Confirm, Done, View...)
+     follow Roku purple, matching brand/focus/selection everywhere else in this theme. ---------- */
+  --action-primary:var(--brand);
+  --action-primary-text:#FFFFFF;
+  --action-primary-hover:#7C3AA8;
+  --action-primary-focus:0 0 18px var(--brand);
+
+  /* ---------- Brand tint — purple, matching --fill-ctl's purple-tinted direction ---------- */
+  --brand-tint:rgba(102,45,145,.16);
 }
 html[data-theme="polymarket"]{
   /* exploration09 — POLYMARKET: clean / market / data-driven. Poly Blue (#2E5CFF) is used
@@ -459,6 +545,29 @@ html[data-theme="polymarket"]{
   /* ---------- Brand-mark text/glyph on the --brand fill ---------- */
   --on-brand-ink:#FFFFFF;
   --on-brand-knob:#FFFFFF;
+
+  /* ---------- Trading (YES/NO) — Polymarket's own clean, data-driven trading treatment,
+     not Kalshi's mint/coral pair. A crisper, more saturated green and a cleaner red, with
+     the same restrained-glow/restrained-tint direction already used for --glow-brand/
+     --shadow-card in this theme (lower alpha, smaller blur than Kalshi/Roku). ---------- */
+  --trade-yes:#00C48C;
+  --trade-no:#E5484D;
+  --trade-yes-surface:rgba(0,196,140,.14);
+  --trade-no-surface:rgba(229,72,77,.14);
+  --trade-yes-surface-strong:rgba(0,196,140,.22);
+  --trade-no-surface-strong:rgba(229,72,77,.22);
+  --trade-yes-glow:0 0 16px rgba(0,196,140,.40);
+  --trade-no-glow:0 0 16px rgba(229,72,77,.36);
+
+  /* ---------- Primary action — generic CTAs follow Poly Blue. ---------- */
+  --action-primary:var(--brand);
+  --action-primary-text:#FFFFFF;
+  --action-primary-hover:#5878FF;
+  --action-primary-focus:0 0 12px rgba(46,92,255,.45);
+
+  /* ---------- Brand tint — blue, reserved for brand/selection per this theme's own
+     stroke/fill direction (fills otherwise stay neutral gray). ---------- */
+  --brand-tint:rgba(46,92,255,.14);
 }
 *{margin:0;padding:0;box-sizing:border-box;}
 html,body{height:100%;background:#000;overflow:hidden;font-family:var(--font-body);}
@@ -566,7 +675,7 @@ html,body{height:100%;background:#000;overflow:hidden;font-family:var(--font-bod
    mixed-case reads more naturally inline ("Balance $250.00", not "BALANCE $250.00"). */
 #pHeader .balance .lbl{font:var(--weight-medium) 20px/1 var(--font-body);color:var(--text-3);}
 #pHeader .balance .val{font:var(--weight-medium) 24px/1 var(--font-body);color:var(--text-1);font-variant-numeric:tabular-nums;transition:color .3s;}
-#pHeader .balance .val.tick{color:var(--yes);}
+#pHeader .balance .val.tick{color:var(--trade-yes);}
 
 #pBody{flex:1;position:relative;overflow:hidden;}
 .screen{position:absolute;inset:0;display:flex;flex-direction:column;}
@@ -613,13 +722,13 @@ html,body{height:100%;background:#000;overflow:hidden;font-family:var(--font-bod
 .mrow .chance.dim{color:var(--text-3);}
 .mrow .chev{flex:0 0 20px;color:var(--text-3);font-size:24px;opacity:0;transition:opacity .15s;}
 .mrow.focused .chev{opacity:1;}
-.mrow.tickUp .chance{color:var(--yes);}
-.mrow.tickDown .chance{color:var(--no);}
+.mrow.tickUp .chance{color:var(--trade-yes);}
+.mrow.tickDown .chance{color:var(--trade-no);}
 
 /* movement */
 .mov{font:var(--weight-medium) 20px/26px var(--font-body);font-variant-numeric:tabular-nums;}
-.mov.up{color:var(--yes);}
-.mov.down{color:var(--no);}
+.mov.up{color:var(--trade-yes);}
+.mov.down{color:var(--trade-no);}
 
 /* ---------- Event-level Market list (DESIGN.md §7.30) — compact rows, no Yes/No controls ---------- */
 .marRow{display:flex;flex-direction:column;justify-content:center;gap:10px;min-height:88px;border-radius:var(--shape-row-compact);padding:14px 16px;transition:background 150ms,transform 150ms;}
@@ -639,9 +748,9 @@ html,body{height:100%;background:#000;overflow:hidden;font-family:var(--font-bod
 .marRow .mult{font:500 20px/1 var(--font-body);color:var(--text-3);font-variant-numeric:tabular-nums;transition:color .2s;}
 .marRow .pct{font:var(--weight-medium) 26px/32px var(--font-body);color:var(--text-1);font-variant-numeric:tabular-nums;transition:color .2s;}
 .marRow .bar{height:8px;border-radius:4px;background:var(--fill-ctl);overflow:hidden;}
-.marRow .barFill{height:100%;border-radius:4px;background:var(--yes);transition:width 400ms ease-out;}
-.marRow.tickUp .pct{color:var(--yes);}
-.marRow.tickDown .pct{color:var(--no);}
+.marRow .barFill{height:100%;border-radius:4px;background:var(--brand);transition:width 400ms ease-out;}
+.marRow.tickUp .pct{color:var(--trade-yes);}
+.marRow.tickDown .pct{color:var(--trade-no);}
 .marRow.focused{background:var(--surface-raised);transform:scale(1.02);outline:4px solid var(--focus-ring);outline-offset:3px;}
 /* two-Market Event (e.g. Bills vs Texans): larger head-to-head presentation, same bar
    mechanism — a shared split-bar was considered and rejected as over-engineering for a
@@ -653,8 +762,8 @@ html,body{height:100%;background:#000;overflow:hidden;font-family:var(--font-bod
 /* auto-dismissing "meaningful movement" badge (Priority 2b) — purely decorative: no
    tabindex/interactive semantics, never takes focus, never shifts other rows. */
 .marRow .indicator{font:var(--weight-medium) 18px/1 var(--font-body);border-radius:var(--radius-sm);padding:4px 8px;font-variant-numeric:tabular-nums;white-space:nowrap;}
-.marRow .indicator.up{background:var(--yes-tint);color:var(--yes);}
-.marRow .indicator.down{background:var(--no-tint);color:var(--no);}
+.marRow .indicator.up{background:var(--trade-yes-surface);color:var(--trade-yes);}
+.marRow .indicator.down{background:var(--trade-no-surface);color:var(--trade-no);}
 /* single-Market Event card (exploration03): the same marRow anatomy, just given more
    breathing room so a one-row card never reads as broken/empty — a type-scale bump in the
    same spirit as .h2h above, not a different component. */
@@ -985,8 +1094,8 @@ html,body{height:100%;background:#000;overflow:hidden;font-family:var(--font-bod
 .chip.closing{background:rgba(255,225,77,.16);color:var(--warn);}
 .chip.suspended{background:rgba(255,149,0,.16);color:var(--attn);}
 .chip.closed{background:var(--fill-ctl);color:var(--text-2);}
-.chip.sideYes{background:var(--yes-tint);color:var(--yes);}
-.chip.sideNo{background:var(--no-tint);color:var(--no);}
+.chip.sideYes{background:var(--trade-yes-surface);color:var(--trade-yes);}
+.chip.sideNo{background:var(--trade-no-surface);color:var(--trade-no);}
 
 /* ============================================================
    GLOBAL SKELETON SYSTEM (exploration06 "Skeleton Loading" pass)
@@ -1036,17 +1145,25 @@ html,body{height:100%;background:#000;overflow:hidden;font-family:var(--font-bod
 .centerState{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:0 40px;text-align:center;}
 .centerState .glyph{width:80px;height:80px;border-radius:50%;display:flex;align-items:center;justify-content:center;font:var(--weight-medium) 40px/1 var(--font-body);}
 .centerState .glyph.neutral{background:var(--fill-ctl);color:var(--text-2);}
-.centerState .glyph.error{background:var(--no-tint);color:var(--err);}
-.centerState .glyph.success{background:var(--yes-tint);color:var(--yes);font-size:44px;}
+.centerState .glyph.error{background:var(--err-surface);color:var(--err);}
+.centerState .glyph.success{background:var(--success-surface);color:var(--success);font-size:44px;}
 .centerState h3{font:var(--weight-medium) 24px/32px var(--font-body);color:var(--text-1);}
 .centerState p{font:var(--weight-regular) 22px/28px var(--font-body);color:var(--text-2);}
 
 /* ---------- buttons ---------- */
 .btn{display:flex;align-items:center;justify-content:center;gap:12px;border-radius:var(--shape-button);font:var(--weight-medium) 26px/32px var(--font-body);transition:transform 150ms,background 150ms,opacity 150ms,box-shadow 150ms;white-space:nowrap;}
-.btnPrimary{height:72px;background:var(--yes);color:var(--on-fill);}
-.btnPrimary.noSide{background:var(--no);}
-.btnPrimary.focused{outline:4px solid var(--focus-ring);outline-offset:3px;transform:scale(1.04);box-shadow:var(--glow-yes);}
-.btnPrimary.noSide.focused{box-shadow:var(--glow-no);}
+.btnPrimary{height:72px;background:var(--action-primary);color:var(--action-primary-text);}
+/* .trade marks the small set of btnPrimary instances that ARE a literal trade execution
+   (Buy Yes/No, Review Order, Confirm Order) — these stay on --trade-yes/--trade-no instead
+   of the generic action color, and noSide (already used by JS to flip red for a No-side
+   trade) only means "No" in combination with .trade now; every generic CTA (Sign In,
+   View position, Review market, Try again, View positions...) never carries .trade or
+   .noSide and simply gets the theme's --action-primary treatment. */
+.btnPrimary.trade{background:var(--trade-yes);color:var(--on-fill);}
+.btnPrimary.trade.noSide{background:var(--trade-no);}
+.btnPrimary.focused{outline:4px solid var(--focus-ring);outline-offset:3px;transform:scale(1.04);box-shadow:var(--action-primary-focus);}
+.btnPrimary.trade.focused{box-shadow:var(--trade-yes-glow);}
+.btnPrimary.trade.noSide.focused{box-shadow:var(--trade-no-glow);}
 .btnPrimary.disabled{opacity:.4;}
 /* arming delay: swallow accidental double-OK; button lights up when it becomes pressable */
 .btnPrimary.arming{opacity:.55;box-shadow:none;}
@@ -1083,8 +1200,8 @@ html,body{height:100%;background:#000;overflow:hidden;font-family:var(--font-bod
 .dSpark{margin-top:20px;}
 .dSparkLbl{font:var(--weight-medium) 16px/20px var(--font-body);letter-spacing:.08em;text-transform:uppercase;color:var(--text-3);margin-bottom:4px;}
 .dSparkSvg{display:block;width:100%;height:120px;}
-.dSparkLine{fill:none;stroke:var(--yes);stroke-width:3px;stroke-linejoin:round;stroke-linecap:round;}
-.dSparkDot{fill:var(--yes);stroke:var(--surface-panel);stroke-width:2px;}
+.dSparkLine{fill:none;stroke:var(--trade-yes);stroke-width:3px;stroke-linejoin:round;stroke-linecap:round;}
+.dSparkDot{fill:var(--trade-yes);stroke:var(--surface-panel);stroke-width:2px;}
 
 /* position card */
 .posCard{margin-top:24px;background:var(--surface-card);border:1.5px solid var(--stroke-hair);border-radius:var(--shape-card);padding:20px 24px;}
@@ -1093,8 +1210,8 @@ html,body{height:100%;background:#000;overflow:hidden;font-family:var(--font-bod
 .posCard .left{display:flex;align-items:center;gap:12px;font:var(--weight-regular) 24px/32px var(--font-body);color:var(--text-1);}
 .posCard .pnl{font:var(--weight-medium) 24px/32px var(--font-body);font-variant-numeric:tabular-nums;text-align:right;}
 .posCard .pnl small{display:block;font:var(--weight-regular) 20px/24px var(--font-body);color:var(--text-2);}
-.posCard .pnl.up{color:var(--yes);}
-.posCard .pnl.down{color:var(--no);}
+.posCard .pnl.up{color:var(--trade-yes);}
+.posCard .pnl.down{color:var(--trade-no);}
 
 /* yes/no selector — two-tier label per pill (rules #5-7): .ynMain keeps the original
    "YES · 25%" weight/prominence unchanged; .ynSub adds the small muted multiplier beneath
@@ -1119,15 +1236,15 @@ html,body{height:100%;background:#000;overflow:hidden;font-family:var(--font-bod
    instead of sharing the primary "YES · 25%" line — see ynBtnHTML/movHTML above and the E05
    compact overrides below. */
 .ynSub .ynMovSlot{display:inline-flex;}
-.ynBtn.yes{color:var(--yes);}
-.ynBtn.no{color:var(--no);}
-.ynBtn.yes.selected{background:var(--yes-tint);border-color:var(--yes);}
-.ynBtn.no.selected{background:var(--no-tint);border-color:var(--no);}
+.ynBtn.yes{color:var(--trade-yes);}
+.ynBtn.no{color:var(--trade-no);}
+.ynBtn.yes.selected{background:var(--trade-yes-surface);border-color:var(--trade-yes);}
+.ynBtn.no.selected{background:var(--trade-no-surface);border-color:var(--trade-no);}
 .ynBtn.focused{outline:4px solid var(--focus-ring);outline-offset:3px;transform:scale(1.04);}
-.ynBtn.yes.focused{background:var(--yes-tint);}
-.ynBtn.no.focused{background:var(--no-tint);}
-.ynBtn.yes.focused.selected{background:var(--yes-tint-strong);}
-.ynBtn.no.focused.selected{background:var(--no-tint-strong);}
+.ynBtn.yes.focused{background:var(--trade-yes-surface);}
+.ynBtn.no.focused{background:var(--trade-no-surface);}
+.ynBtn.yes.focused.selected{background:var(--trade-yes-surface-strong);}
+.ynBtn.no.focused.selected{background:var(--trade-no-surface-strong);}
 .disabledZone .ynBtn,.disabledZone .amt,.disabledZone .payout,.disabledZone .amtLbl{opacity:.4;}
 /* amount gated until a side is chosen — lights up on selection */
 .gated .amtLbl,.gated .amt,.gated .payout{opacity:.4;transition:opacity .25s;}
@@ -1144,7 +1261,7 @@ html,body{height:100%;background:#000;overflow:hidden;font-family:var(--font-bod
 /* payout line */
 .payout{margin-top:20px;display:flex;align-items:baseline;justify-content:space-between;}
 .payout .lbl{font:var(--weight-regular) 22px/28px var(--font-body);color:var(--text-2);}
-.payout .val{font:var(--weight-medium) 44px/48px var(--font-numeric);color:var(--yes);font-variant-numeric:tabular-nums;transition:opacity .2s;}
+.payout .val{font:var(--weight-medium) 44px/48px var(--font-numeric);color:var(--trade-yes);font-variant-numeric:tabular-nums;transition:opacity .2s;}
 .payout .val.dim{color:var(--text-3);}
 
 /* warning + banner */
@@ -1180,7 +1297,7 @@ html,body{height:100%;background:#000;overflow:hidden;font-family:var(--font-bod
 .cRow .k{font:var(--weight-regular) 24px/32px var(--font-body);color:var(--text-2);}
 .cRow .v{font:var(--weight-regular) 24px/32px var(--font-body);color:var(--text-1);font-variant-numeric:tabular-nums;text-align:right;}
 .cRow .v.strong{font-weight:600;}
-.cRow .v.win{font:var(--weight-medium) 44px/48px var(--font-numeric);color:var(--yes);}
+.cRow .v.win{font:var(--weight-medium) 44px/48px var(--font-numeric);color:var(--trade-yes);}
 .dialog .btn{margin-top:16px;}
 .dialog .btn:first-of-type{margin-top:32px;}
 
@@ -1218,7 +1335,7 @@ html,body{height:100%;background:#000;overflow:hidden;font-family:var(--font-bod
 .qrCard svg{display:block;width:360px;height:360px;} /* shrunk from the old full-screen 560px, still comfortably large/square/scannable at the panel's 576px width — see report item 3 */
 .authActions{margin-top:16px;display:flex;flex-direction:column;gap:10px;width:100%;max-width:420px;}
 .authActions .authHint{margin-top:4px;text-align:center;}
-.authCard.linked .glyph{width:88px;height:88px;border-radius:50%;background:var(--yes-tint);color:var(--yes);display:flex;align-items:center;justify-content:center;font-size:46px;}
+.authCard.linked .glyph{width:88px;height:88px;border-radius:50%;background:var(--success-surface);color:var(--success);display:flex;align-items:center;justify-content:center;font-size:46px;}
 
 /* header account chip — Avatar + Balance is ONE focusable control (#acctChip carries the
    focus ring on the whole .balance div, never on the avatar alone). E04 two-row header pass:
@@ -1235,7 +1352,7 @@ html,body{height:100%;background:#000;overflow:hidden;font-family:var(--font-bod
 #pHeader .avatarCircle{width:44px;height:44px;flex:0 0 44px;border-radius:50%;background:var(--fill-ctl);display:flex;align-items:center;justify-content:center;transition:background 150ms;}
 #pHeader .acctGlyph{width:24px;height:24px;flex:0 0 24px;color:var(--text-2);transition:color 150ms;}
 #pHeader .balance.focused .acctGlyph{color:var(--text-1);}
-#pHeader .balance.signin .avatarCircle{background:var(--yes-tint);}
+#pHeader .balance.signin .avatarCircle{background:var(--brand-tint);}
 #pHeader .balance.signin .acctGlyph{color:var(--brand);}
 #pHeader .balance.focused{outline:4px solid var(--focus-ring);outline-offset:3px;background:var(--surface-raised);}
 #pHeader .balance.signin .val{color:var(--brand);}
@@ -1466,20 +1583,20 @@ html,body{height:100%;background:#000;overflow:hidden;font-family:var(--font-bod
 /* Position card Add/Sell row — DESIGN.md §7.13 */
 .posCard .actions{margin-top:16px;display:flex;gap:16px;}
 .posCard .actions .posBtn{flex:1;height:64px;border-radius:var(--shape-button-pill);display:flex;align-items:center;justify-content:center;font:var(--weight-medium) 24px/30px var(--font-body);transition:transform 150ms,background 150ms;}
-.posCard .actions .posBtn.yesSide{background:var(--yes-tint);color:var(--yes);}
-.posCard .actions .posBtn.noSide{background:var(--no-tint);color:var(--no);}
+.posCard .actions .posBtn.yesSide{background:var(--trade-yes-surface);color:var(--trade-yes);}
+.posCard .actions .posBtn.noSide{background:var(--trade-no-surface);color:var(--trade-no);}
 .posCard .actions .posBtn.focused{outline:4px solid var(--focus-ring);outline-offset:3px;transform:scale(1.04);}
 .posCard .closesLine{margin-top:14px;text-align:center;font:var(--weight-regular) 22px/28px var(--font-body);color:var(--text-2);}
 .posCard .settleLine{margin-top:12px;font:var(--weight-medium) 34px/40px var(--font-numeric);font-variant-numeric:tabular-nums;}
-.posCard .settleLine.won{color:var(--yes);}
-.posCard .settleLine.lost{color:var(--no);}
+.posCard .settleLine.won{color:var(--trade-yes);}
+.posCard .settleLine.lost{color:var(--trade-no);}
 .posCard .row.top{margin-top:0;justify-content:space-between;}
 /* exploration07 (refinement pass) — settled Market Detail's "YOUR RESULT" card. Reuses
    .posCard's own frame/spacing and .settleLine's won/lost coloring; the WON/LOST badge
    reuses the same tint formula as .chip.sideYes/.chip.sideNo (yes/no-tint background,
    yes/no text color) rather than inventing a new chip palette. */
-.chip.won{background:var(--yes-tint);color:var(--yes);}
-.chip.lost{background:var(--no-tint);color:var(--no);}
+.chip.won{background:var(--trade-yes-surface);color:var(--trade-yes);}
+.chip.lost{background:var(--trade-no-surface);color:var(--trade-no);}
 .resultPayout{margin-top:4px;font:var(--weight-medium) 24px/30px var(--font-body);color:var(--text-1);font-variant-numeric:tabular-nums;}
 .resultFlow{margin-top:10px;font:var(--weight-regular) 20px/26px var(--font-body);color:var(--text-2);font-variant-numeric:tabular-nums;}
 
@@ -1509,10 +1626,10 @@ html,body{height:100%;background:#000;overflow:hidden;font-family:var(--font-bod
 
 /* Generic result/status glyph, usable outside .centerState */
 .glyph{width:80px;height:80px;border-radius:50%;display:flex;align-items:center;justify-content:center;font:var(--weight-medium) 40px/1 var(--font-body);}
-.glyph.success{background:var(--yes-tint);color:var(--yes);font-size:44px;}
-.glyph.error{background:var(--no-tint);color:var(--err);}
+.glyph.success{background:var(--success-surface);color:var(--success);font-size:44px;}
+.glyph.error{background:var(--err-surface);color:var(--err);}
 .glyph.neutral{background:var(--fill-ctl);color:var(--text-2);}
-.glyph.checkOutline{background:transparent;border:4px solid var(--yes);color:var(--yes);font-size:38px;}
+.glyph.checkOutline{background:transparent;border:4px solid var(--success);color:var(--success);font-size:38px;}
 .resultActions{display:flex;flex-direction:column;gap:12px;width:100%;margin-top:8px;}
 .successBody .sub{font-size:20px;color:var(--text-3);}
 </style>
@@ -3139,7 +3256,7 @@ function renderPositionsList(fadeCls){
       const cost = Math.round(p.contracts*p.avgCents)/100;
       const won = p.settled==='won';
       const amt = won ? Math.round((p.contracts*1-cost)*100)/100 : cost;
-      rightHTML = `<div class="chance" style="color:${won?'var(--yes)':'var(--no)'};">${won?fmt$(amt):'-'+fmt$(amt)}</div>`;
+      rightHTML = `<div class="chance" style="color:${won?'var(--trade-yes)':'var(--trade-no)'};">${won?fmt$(amt):'-'+fmt$(amt)}</div>`;
     } else {
       const cur = p.side==='yes'? m.yes : m.no;
       const value = Math.round(p.contracts*cur)/100;
@@ -3576,7 +3693,7 @@ function cardExpandBodyHTML(mk, ct){
     // tick/step) and matches the spec's named sequence, Market -> YES/NO -> Amount ->
     // Review Order -> Confirm, verbatim.
     const label = sideSel ? 'Review Order' : 'Choose Yes or No';
-    ctaHTML = `<div class="ctaWrap"><div class="btn btnPrimary ${sideSel==='no'?'noSide':''} ${ctaEnabled?'':'disabled'} ${ct.focus==='cta'?'focused':''}" id="ctCtaBtn">${label}</div></div>`;
+    ctaHTML = `<div class="ctaWrap"><div class="btn btnPrimary trade ${sideSel==='no'?'noSide':''} ${ctaEnabled?'':'disabled'} ${ct.focus==='cta'?'focused':''}" id="ctCtaBtn">${label}</div></div>`;
   }
   const yesnoHTML = `<div class="yesno">
       ${ynBtnHTML(mk,'yes',{selected:sideSel==='yes', focused:ct.focus==='yes', id:'ctYes', compact:true})}
@@ -4102,7 +4219,7 @@ function renderDetail(back){
     } else {
       const verb = d.addMode ? 'Add' : 'Buy';
       const label = sideSel ? `${verb} ${sideSel==='yes'?'Yes':'No'} · ${px}¢` : 'Choose Yes or No';
-      ctaHTML = `<div class="ctaWrap"><div class="btn btnPrimary ${sideSel==='no'?'noSide':''} ${ctaEnabled?'':'disabled'} ${d.focus==='cta'?'focused':''}" id="ctaBtn">${label}</div></div>`;
+      ctaHTML = `<div class="ctaWrap"><div class="btn btnPrimary trade ${sideSel==='no'?'noSide':''} ${ctaEnabled?'':'disabled'} ${d.focus==='cta'?'focused':''}" id="ctaBtn">${label}</div></div>`;
     }
     const yesnoHTML = d.addMode
       ? `<div class="yesno">
@@ -4276,10 +4393,10 @@ function reviewBodyHTML(po, m){
 
   let stateHTML;
   if (S.busy){
-    stateHTML = `<div class="btn btnPrimary ${sideForColor==='no'?'noSide':''} focused" id="cfConfirm"><div class="spinner"></div></div>
+    stateHTML = `<div class="btn btnPrimary trade ${sideForColor==='no'?'noSide':''} focused" id="cfConfirm"><div class="spinner"></div></div>
       <div class="stageLabel">${S.orderStage==='matching'?'Matching…':'Submitting…'}</div>`;
   } else {
-    stateHTML = `<div class="btn btnPrimary ${sideForColor==='no'?'noSide':''} ${S.confirmFocus==='confirm'?'focused':''} ${S.confirmArmed?'':'arming'}" id="cfConfirm">${ctaLabel}</div>
+    stateHTML = `<div class="btn btnPrimary trade ${sideForColor==='no'?'noSide':''} ${S.confirmFocus==='confirm'?'focused':''} ${S.confirmArmed?'':'arming'}" id="cfConfirm">${ctaLabel}</div>
       <div class="btn btnSecondary ${S.confirmFocus==='cancel'?'focused':''}" id="cfCancel">Cancel</div>`;
   }
 
@@ -4627,21 +4744,21 @@ function renderResult(){
     const pos = positions.find(p=>p.marketId===po.mId && p.side===po.side);
     const posLine = pos ? `${pos.contracts} contracts @ ${pos.avgCents}¢` : 'Position closed';
     bodyLines = `<p>${reqLabel} · ${filledLabel}</p><p>${fill.filledContracts} contracts @ ${fill.cents}¢ avg</p><p>${remLabel}</p><p class="sub">${posLine}</p>`;
-    actionsHTML = `<div class="btn btnPrimary ${po.side==='no'?'noSide':''} ${S.resultFocus==='viewPosition'?'focused':''}" id="resView">View position</div>
+    actionsHTML = `<div class="btn btnPrimary ${S.resultFocus==='viewPosition'?'focused':''}" id="resView">View position</div>
                     <div class="btn btnSecondary ${S.resultFocus==='done'?'focused':''}" id="resDone">Done</div>`;
   }
   else if (variant==='notfilled'){
     glyphHTML = `<div class="glyph neutral">–</div>`;
     title = 'Not filled';
     bodyLines = `<p>No part of this order executed. The market may have moved — review the current price before trying again.</p>`;
-    actionsHTML = `<div class="btn btnPrimary ${po.side==='no'?'noSide':''} ${S.resultFocus==='reviewMarket'?'focused':''}" id="resReview">Review market</div>
+    actionsHTML = `<div class="btn btnPrimary ${S.resultFocus==='reviewMarket'?'focused':''}" id="resReview">Review market</div>
                     <div class="btn btnSecondary ${S.resultFocus==='done'?'focused':''}" id="resDone">Done</div>`;
   }
   else if (variant==='error-known'){
     glyphHTML = `<div class="glyph error">!</div>`;
     title = "Order didn't go through";
     bodyLines = `<p>Nothing was charged. You can try again with the same order.</p>`;
-    actionsHTML = `<div class="btn btnPrimary ${po.side==='no'?'noSide':''} ${S.resultFocus==='tryAgain'?'focused':''}" id="resTry">Try again</div>
+    actionsHTML = `<div class="btn btnPrimary ${S.resultFocus==='tryAgain'?'focused':''}" id="resTry">Try again</div>
                     <div class="btn btnSecondary ${S.resultFocus==='done'?'focused':''}" id="resDone">Done</div>`;
   }
   else { // error-unknown
