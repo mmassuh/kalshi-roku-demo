@@ -667,9 +667,10 @@ html,body{height:100%;background:#000;overflow:hidden;font-family:var(--font-bod
 .promptTop{display:flex;align-items:center;justify-content:space-between;gap:24px;margin-bottom:20px;}
 .promptMatch{font:var(--weight-medium) 22px/1.3 var(--font-body);color:var(--text-2);}
 .promptQuestion{font:var(--weight-medium) 40px/1.15 var(--font-body);color:var(--text-1);margin:0;}
-.promptFooter{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:20px;margin-top:24px;font:var(--weight-medium) 24px/1.3 var(--font-body);}
+.promptFooter{display:none;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:20px;margin-top:24px;font:var(--weight-medium) 24px/1.3 var(--font-body);}
+#entry.contextual.focused .promptFooter{display:flex;}
 .promptAction{white-space:nowrap;display:flex;align-items:center;gap:12px;}
-.promptOK{border:2px solid var(--text-2);border-radius:var(--radius-sm);padding:5px 9px;font-size:20px;}
+.promptOK{display:inline-flex;align-items:center;justify-content:center;min-width:52px;min-height:40px;padding:0 12px;border:0;border-radius:var(--shape-button-compact);background:var(--action-primary);color:var(--action-primary-text);box-shadow:var(--action-primary-focus);font:var(--weight-bold) 20px/1 var(--font-body);}
 .promptChance{white-space:nowrap;font-variant-numeric:tabular-nums;color:var(--text-2);}
 #entry.graph{width:550px;}
 .promptGraph{margin-top:24px;display:grid;grid-template-columns:1fr 126px;gap:24px;align-items:center;}
