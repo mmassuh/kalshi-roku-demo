@@ -708,13 +708,14 @@ html,body{height:100%;background:#000;overflow:hidden;font-family:var(--font-bod
    header leaves them, at any header height, with no hardcoded budget between them. */
 #pHeader{flex:0 0 136px;display:flex;flex-direction:column;justify-content:center;gap:8px;padding:12px 32px;border-bottom:1.5px solid var(--stroke-hair);}
 #pHeader .hdrRow{display:flex;align-items:center;width:100%;}
-#pHeader .hdrRow1{height:44px;justify-content:flex-start;}
-#pHeader .hdrRow2{height:60px;gap:8px;justify-content:flex-start;}
+#pHeader .hdrRow1{height:44px;justify-content:space-between;}
+#pHeader .hdrRow2{height:60px;gap:16px;justify-content:space-between;}
 #pHeader .hdrRow2>.authStatus,
 #pHeader .hdrRow2>.hdrRightGroup>.authStatus,
 #pHeader .hdrRow2>.hdrRightGroup>.balance{height:48px;box-sizing:border-box;}
 #pHeader .hdrRow2>.authStatus{margin:0;}
-#pHeader .hdrRow2 .authStatus{font-size:18px;line-height:22px;border-radius:14px;padding:0 12px;background:var(--fill-subtle);transition:background 150ms,transform 150ms;}
+#pHeader .hdrRow2 .authStatus{font-size:18px;line-height:22px;border-radius:14px;padding:0 14px;background:var(--fill-subtle);transition:background 150ms,transform 150ms;}
+#pHeader .hdrRow1 .authStatus{font-size:18px;line-height:22px;margin:0;padding:4px 8px;background:transparent;}
 #pHeader .hdrRow2 .authStatus.focused{transform:scale(1.035);background:var(--surface-raised);}
 #pHeader .hdrRow2 .authStatus svg{width:22px;height:22px;flex:0 0 22px;}
 /* Global Header (exploration04 nav-architecture pass) — ALWAYS the Kalshi brandmark, never
@@ -1448,7 +1449,7 @@ html,body{height:100%;background:#000;overflow:hidden;font-family:var(--font-bod
 /* ============================================================
    exploration07 — USER COMMUNICATION SYSTEM: header bell, badge, and right-side grouping.
    ============================================================ */
-.hdrRightGroup{display:flex;align-items:center;gap:8px;margin-left:auto;}
+.hdrRightGroup{display:flex;align-items:center;gap:16px;margin-left:auto;}
 .commsChip{position:relative;padding:0 12px !important;min-width:48px;justify-content:center;}
 .commsChip svg{width:24px;height:24px;display:block;}
 .commsBadge{position:absolute;top:0;right:0;min-width:22px;height:22px;padding:0 5px;border-radius:var(--shape-badge);background:var(--no);color:var(--on-fill);font:var(--weight-bold) 15px/22px var(--font-body);text-align:center;font-variant-numeric:tabular-nums;box-shadow:0 0 0 3px var(--surface-panel);}
@@ -2719,8 +2720,8 @@ function headerElId(id){ return id==='auth'?'#authChip':id==='positions'?'#posCh
 // alone in Row 1; 'positions'/'comms'/'balance' share Row 2. headerOrder() above is still the
 // single left-to-right/OK-semantics source of truth (unchanged); this is purely the spatial
 // lookup headerKey needs to move Up/Down between rows and Left/Right within one.
-function headerRowOf(id){ return 2; }
-function headerRowItems(row){ return row===2 ? headerOrder() : []; }
+function headerRowOf(id){ return id==='auth' ? 1 : 2; }
+function headerRowItems(row){ return headerOrder().filter(id=>headerRowOf(id)===row); }
 /* ============================================================
    CONTEXTUAL NAVIGATION — ANCESTRY MODEL (exploration04 nav-architecture FIX pass; revised
    2026-09-09 to also fix a missing-ancestor bug: Positions/Account reached via the Global
@@ -2873,7 +2874,7 @@ function renderHeader(){
   // .hdrRightGroup wrapper rather than as a third space-between child — #pHeader .hdrRow's
   // existing `justify-content:space-between` rule (unmodified, still used by Row 1 and by
   // every other screen that never sees this row) still only ever sees two children.
-  $('#pHeader').innerHTML = `<div class="hdrRow hdrRow1">${left}</div><div class="hdrRow hdrRow2">${authHTML}${posChipHTML}<div class="hdrRightGroup">${commsChip}${right}</div></div>`;
+  $('#pHeader').innerHTML = `<div class="hdrRow hdrRow1">${left}${authHTML}</div><div class="hdrRow hdrRow2">${posChipHTML}<div class="hdrRightGroup">${commsChip}${right}</div></div>`;
 }
 /* ============================================================
    GLOBAL HEADER — key handling (exploration04 nav-architecture pass, rule 17/19). Shared by
@@ -2885,25 +2886,32 @@ function renderHeader(){
    ============================================================ */
 function headerKey(ok, back, dir, exitToContent){
   if (back){ closePanel(); return; }
-  const order = headerOrder();
-  const idx = order.indexOf(S.headerFocus);
+  const row = headerRowOf(S.headerFocus);
+  const items = headerRowItems(row);
+  const idx = items.indexOf(S.headerFocus);
   if (dir==='left'){
-    if (idx>0){ S.headerFocus=order[idx-1]; renderHeader(); }
+    if (idx>0){ S.headerFocus=items[idx-1]; renderHeader(); }
     else bounce(headerElId(S.headerFocus),'x');
     return;
   }
   if (dir==='right'){
-    if (idx>=0 && idx<order.length-1){ S.headerFocus=order[idx+1]; renderHeader(); }
+    if (idx>=0 && idx<items.length-1){ S.headerFocus=items[idx+1]; renderHeader(); }
     else bounce(headerElId(S.headerFocus),'x');
     return;
   }
-  if (dir==='down'){
-    S.hdrActive=false;
-    exitToContent();
+  if (dir==='up'){
+    if (row===2 && S.auth==='ready'){ S.headerFocus='auth'; renderHeader(); }
+    else bounce(headerElId(S.headerFocus),'y');
     return;
   }
-  if (dir==='up'){
-    bounce(headerElId(S.headerFocus),'y');
+  if (dir==='down'){
+    if (row===1){
+      // Trading sits above the toolbar; descend to the nearest primary destination.
+      S.headerFocus='positions'; renderHeader();
+    } else {
+      S.hdrActive=false;
+      exitToContent();
+    }
     return;
   }
   if (ok){
