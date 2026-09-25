@@ -706,18 +706,20 @@ html,body{height:100%;background:#000;overflow:hidden;font-family:var(--font-bod
    actual cause (a missing `min-height:0` on #cardTrack, see its own comment below) has
    since been fixed directly, so #cardWrap/.evCard now genuinely fill whatever height this
    header leaves them, at any header height, with no hardcoded budget between them. */
-#pHeader{flex:0 0 136px;display:flex;flex-direction:column;justify-content:center;gap:8px;padding:12px 32px;border-bottom:1.5px solid var(--stroke-hair);}
+#pHeader{flex:0 0 156px;display:flex;flex-direction:column;justify-content:center;gap:12px;padding:14px 32px 16px;border-bottom:1.5px solid var(--stroke-hair);}
 #pHeader .hdrRow{display:flex;align-items:center;width:100%;}
-#pHeader .hdrRow1{height:44px;justify-content:space-between;}
-#pHeader .hdrRow2{height:60px;gap:16px;justify-content:space-between;}
+#pHeader .hdrRow1{height:46px;justify-content:space-between;}
+#pHeader .hdrRow2{height:64px;gap:20px;justify-content:space-between;}
 #pHeader .hdrRow2>.authStatus,
 #pHeader .hdrRow2>.hdrRightGroup>.authStatus,
-#pHeader .hdrRow2>.hdrRightGroup>.balance{height:48px;box-sizing:border-box;}
+#pHeader .hdrRow2>.hdrRightGroup>.balance{height:56px;box-sizing:border-box;}
 #pHeader .hdrRow2>.authStatus{margin:0;}
-#pHeader .hdrRow2 .authStatus{font-size:22px;line-height:26px;border-radius:14px;padding:0 14px;background:var(--fill-subtle);transition:background 150ms,transform 150ms;}
+#pHeader .hdrRow2 .authStatus{font-size:22px;line-height:26px;border-radius:16px;padding:0 18px;background:var(--fill-subtle);transition:background 150ms,transform 150ms;}
 #pHeader .hdrRow1 .authStatus{font:var(--weight-regular) 24px/28px var(--font-body);margin:0;padding:4px 8px;background:transparent;}
 #pHeader .hdrRow2 .authStatus{font:var(--weight-regular) 24px/28px var(--font-body);}
 #pHeader .hdrRow2 .authStatus.focused{transform:scale(1.035);background:var(--surface-raised);}
+#pHeader .hdrRow2 #posChip{min-width:152px;justify-content:center;}
+#pHeader .hdrRow2 .balance{min-width:214px;justify-content:flex-end;}
 #pHeader .hdrRow2 .authStatus svg{width:22px;height:22px;flex:0 0 22px;}
 /* Global Header (exploration04 nav-architecture pass) — ALWAYS the Kalshi brandmark, never
    replaced by a page label (rule 4). It is also now the persistent Home control (rule 5):
@@ -766,10 +768,11 @@ html,body{height:100%;background:#000;overflow:hidden;font-family:var(--font-bod
 @keyframes slideBack{from{transform:translateX(-48px);opacity:0;}to{transform:none;opacity:1;}}
 
 /* ---------- Tabs ---------- */
-#tabs{flex:0 0 88px;display:flex;align-items:center;gap:8px;padding:0 40px;}
-.tab{height:56px;display:flex;align-items:center;padding:0 24px;border-radius:var(--shape-tab);font:var(--weight-medium) 24px/1 var(--font-body);color:var(--text-2);white-space:nowrap;transition:background .15s,color .15s;}
+#tabs{flex:0 0 104px;display:flex;align-items:flex-start;gap:12px;padding:18px 40px 0;}
+.tab{height:56px;display:flex;align-items:center;padding:0 24px;border-radius:var(--shape-tab);font:var(--weight-medium) 24px/1 var(--font-body);color:var(--text-2);white-space:nowrap;transition:background .15s,color .15s,transform .15s;}
 .tab.active{background:var(--fill-ctl);color:var(--text-1);}
-.tab.focused{outline:4px solid var(--focus-ring);outline-offset:3px;}
+.tab.focused{outline:4px solid var(--focus-ring);outline-offset:3px;background:var(--surface-raised);color:var(--text-1);transform:scale(1.035);}
+.tab.active.focused{background:var(--fill-ctl);}
 
 /* ---------- Market list ---------- */
 /* 10px top/bottom so the focus ring of the first and last rows is not clipped:
@@ -1433,7 +1436,7 @@ html,body{height:100%;background:#000;overflow:hidden;font-family:var(--font-bod
    it now sits inside a filled circular avatar affordance — same "tinted circle around a
    glyph" language .mrow .avatar already uses elsewhere in this file, just circular instead
    of rounded-square to read unambiguously as a person/account control. */
-#pHeader .balance{display:flex;align-items:center;gap:8px;height:48px;border-radius:14px;padding:0 10px;margin:0;background:var(--fill-subtle);transition:background 150ms,transform 150ms;}
+#pHeader .balance{display:flex;align-items:center;gap:10px;height:56px;border-radius:16px;padding:0 14px;margin:0;background:var(--fill-subtle);transition:background 150ms,transform 150ms;}
 /* E04 compact-header alignment fix: label + value on one line (was a stacked, right-aligned
    two-line block) — a simple baseline-aligned row now that the avatar sits at the far end
    instead of the near end, so there's no longer a "stack it to keep the block narrow next
@@ -1450,9 +1453,9 @@ html,body{height:100%;background:#000;overflow:hidden;font-family:var(--font-bod
 /* ============================================================
    exploration07 — USER COMMUNICATION SYSTEM: header bell, badge, and right-side grouping.
    ============================================================ */
-.hdrRightGroup{display:flex;align-items:center;gap:16px;margin-left:auto;}
-.commsChip{position:relative;padding:0 12px !important;min-width:48px;justify-content:center;}
-.commsChip svg{width:24px;height:24px;display:block;}
+.hdrRightGroup{display:flex;align-items:center;gap:12px;margin-left:auto;}
+.commsChip{position:relative;padding:0 14px !important;min-width:56px;justify-content:center;}
+.commsChip svg{width:26px;height:26px;display:block;}
 .commsBadge{position:absolute;top:0;right:0;min-width:22px;height:22px;padding:0 5px;border-radius:var(--shape-badge);background:var(--no);color:var(--on-fill);font:var(--weight-bold) 15px/22px var(--font-body);text-align:center;font-variant-numeric:tabular-nums;box-shadow:0 0 0 3px var(--surface-panel);}
 
 /* ---------- Communication Center rows (reuses .mrow/.avatar/.mid/.right/.chev + .groupLabel,
