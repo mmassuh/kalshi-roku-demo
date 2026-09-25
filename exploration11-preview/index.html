@@ -675,7 +675,7 @@ html,body{height:100%;background:#000;overflow:hidden;font-family:var(--font-bod
 /* Roku remote affordance: intentionally device-level, not brand-level. The OK key is
    rendered like the raised circular button on a Roku remote and stays Roku purple under
    Kalshi, Roku, and Polymarket skins. */
-.promptOK{display:inline-flex;align-items:center;justify-content:center;width:46px;height:46px;flex:0 0 46px;padding:0;border:2px solid rgba(255,255,255,.30);border-radius:50%;background:#6F1AB1;color:#fff;box-shadow:inset 0 1px 0 rgba(255,255,255,.24),inset 0 -3px 0 rgba(0,0,0,.20),0 3px 0 rgba(35,10,55,.75),0 6px 12px rgba(0,0,0,.30);font:var(--weight-bold) 16px/1 var(--font-body);text-shadow:0 1px 1px rgba(0,0,0,.28);}
+.promptOK{display:inline-flex;align-items:center;justify-content:center;width:52px;height:52px;flex:0 0 52px;padding:0;border:2px solid rgba(255,255,255,.30);border-radius:50%;background:#6F1AB1;color:#fff;box-shadow:inset 0 1px 0 rgba(255,255,255,.24),inset 0 -3px 0 rgba(0,0,0,.20),0 3px 0 rgba(35,10,55,.75),0 6px 12px rgba(0,0,0,.30);font:var(--weight-bold) 18px/1 var(--font-body);text-shadow:0 1px 1px rgba(0,0,0,.28);}
 .promptChance{white-space:nowrap;font-variant-numeric:tabular-nums;color:var(--text-2);}
 #entry.graph{width:550px;}
 .promptGraph{margin-top:24px;display:grid;grid-template-columns:1fr 126px;gap:24px;align-items:center;}
@@ -5052,7 +5052,7 @@ function renderEntryPrompt(){
   el.classList.toggle('contextual', variant !== 'original');
   el.classList.toggle('graph', variant === 'graph');
   if (variant === 'original'){
-    el.innerHTML = `<span class="kdot">${brandLogoHTML('compact')}</span><span>${brandName()} · Predict</span><span class="okHint">OK ▸</span>`;
+    el.innerHTML = `<span class="kdot">${brandLogoHTML('compact')}</span><span>${brandName()} · Predict</span><span class="okHint"><span class="promptOK">OK</span></span>`;
   } else {
     const history = market.history;
     const points = history.map((value,i)=>`${i*380/(history.length-1)},${110-value}`).join(' ');
