@@ -5300,10 +5300,15 @@ window.addEventListener('keydown', e=>{
   if (document.getElementById('scaler').classList.contains('celebration-open')){ celebrationKey(ok, back); return; }
 
   if (S.mode==='watching'){
-    if (ok||dir) focusEntry();
+    // Exploration 11: only Right or Down can move focus into the broadcast prompt.
+    // OK must not open or focus the prompt from the ambient watching state.
+    if (dir==='right' || dir==='down') focusEntry();
     return;
   }
   if (S.mode==='entry'){
+    // Defensive re-focus: if the ambient reveal timer removed the visual focus class
+    // while state is already "entry", Right/Down restores focus immediately.
+    if (dir==='right' || dir==='down'){ focusEntry(); return; }
     resetEntryIdle();
     if (ok) openPanel();
     else if (back){ S.mode='watching'; $('#entry').classList.remove('focused'); }
