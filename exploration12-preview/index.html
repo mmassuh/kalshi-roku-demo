@@ -5416,9 +5416,9 @@ function listKey(ok,back,dir){
   // cards zone (exploration03) — Left/Right moves the focused Event card (S.rowIdx);
   // Up/Down moves the focused Market row inside it (S.marketIdx). Priority 0: every pure
   // focus move below patches classes on the existing DOM in place (moveCardFocus /
-  // moveMarketRowFocus) instead of calling render(), which would rebuild every card. OK
-  // opens Market Detail directly on the focused Market — single- and multi-Market Events
-  // are handled identically here; there is no separate "open the Event" step any more.
+  // moveMarketRowFocus) instead of calling render(), which would rebuild every card. In
+  // Exploration 12, OK returns to the earlier in-place interaction: the focused Market
+  // expands inside its Event Card instead of navigating to a separate Market Detail screen.
   // E05: while a Market is expanded in place, it captures ALL D-pad input (its own
   // yes/no/amount/cta zones, plus the Up-to-collapse gesture) — normal card/row navigation
   // below is unreachable until it collapses. Back is already handled above, unconditionally,
@@ -5444,9 +5444,10 @@ function listKey(ok,back,dir){
     else bounce('.marRow.focused','y');
   }
   else if (ok){
-    // E10: a dedicated Market screen replaces inline expansion. Preserve card/row focus
-    // in S so contextual navigation returns to the same market without shifting the list.
-    openDetail(byId(curEv.markets[S.marketIdx].id));
+    // E12: restore the in-place Market interaction inherited from E05.
+    // The existing cardTrade flow handles expansion, loading, Yes/No, Amount and Review
+    // without leaving the Event Card or changing the horizontal carousel context.
+    openCardTrade(byId(curEv.markets[S.marketIdx].id));
   }
 }
 /* ---------- Event Market List keys (rule I) ---------- */
