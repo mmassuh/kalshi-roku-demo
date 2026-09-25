@@ -3680,7 +3680,8 @@ function marRowHTML(mk, focused, variant, dotColor, cardTrade){
   // DOM write for no visible reason).
   const topRight = expanded ? '' :
     `<span class="pctWrap"><span class="mult">${multFor(mk.yes)}</span><span class="pct">${mk.yes}%</span><span class="indicator" hidden></span></span>`;
-  const bar = expanded ? '' : `<div class="bar"><div class="barFill" style="width:${mk.yes}%"></div></div>`;
+  const barColor = dotColor ? `background:${dotColor};` : '';
+  const bar = expanded ? '' : `<div class="bar"><div class="barFill" style="width:${mk.yes}%;${barColor}"></div></div>`;
   // Starts at height:0 unconditionally — openCardTrade animates it open right after the
   // render that mounts it (see animateExpandOpen); a re-render while already open instead
   // snaps this back to its (possibly new) content height with no transition, never
