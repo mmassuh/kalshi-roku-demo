@@ -671,11 +671,11 @@ html,body{height:100%;background:#000;overflow:hidden;font-family:var(--font-bod
    of snapping between two heights. The collapsed state reserves zero vertical space. */
 .promptFooter{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:20px;max-height:0;margin-top:0;opacity:0;overflow:hidden;transform:translateY(-6px);pointer-events:none;font:var(--weight-medium) 24px/1.3 var(--font-body);transition:max-height .18s cubic-bezier(.2,0,0,1),margin-top .18s cubic-bezier(.2,0,0,1),opacity .10s ease,transform .18s cubic-bezier(.2,0,0,1);}
 #entry.contextual.focused .promptFooter{max-height:56px;margin-top:24px;opacity:1;transform:none;pointer-events:auto;}
-.promptAction{white-space:nowrap;display:flex;align-items:center;gap:12px;}
-/* Roku remote affordance: intentionally device-level, not brand-level. It stays Roku
-   purple under Kalshi, Roku, and Polymarket skins because the interaction is performed
-   with a Roku remote. */
-.promptOK{display:inline-flex;align-items:center;justify-content:center;width:42px;height:42px;flex:0 0 42px;padding:0;border:0;border-radius:50%;background:#6F1AB1;color:#fff;box-shadow:0 4px 14px rgba(0,0,0,.28);font:var(--weight-bold) 17px/1 var(--font-body);}
+.promptAction{white-space:nowrap;display:flex;align-items:center;gap:14px;padding:4px 2px;}
+/* Roku remote affordance: intentionally device-level, not brand-level. The OK key is
+   rendered like the raised circular button on a Roku remote and stays Roku purple under
+   Kalshi, Roku, and Polymarket skins. */
+.promptOK{display:inline-flex;align-items:center;justify-content:center;width:46px;height:46px;flex:0 0 46px;padding:0;border:2px solid rgba(255,255,255,.30);border-radius:50%;background:#6F1AB1;color:#fff;box-shadow:inset 0 1px 0 rgba(255,255,255,.24),inset 0 -3px 0 rgba(0,0,0,.20),0 3px 0 rgba(35,10,55,.75),0 6px 12px rgba(0,0,0,.30);font:var(--weight-bold) 16px/1 var(--font-body);text-shadow:0 1px 1px rgba(0,0,0,.28);}
 .promptChance{white-space:nowrap;font-variant-numeric:tabular-nums;color:var(--text-2);}
 #entry.graph{width:550px;}
 .promptGraph{margin-top:24px;display:grid;grid-template-columns:1fr 126px;gap:24px;align-items:center;}
@@ -5057,7 +5057,7 @@ function renderEntryPrompt(){
     const history = market.history;
     const points = history.map((value,i)=>`${i*380/(history.length-1)},${110-value}`).join(' ');
     const chart = variant === 'graph' ? `<div class="promptGraph"><div><svg viewBox="0 0 380 120" role="img" aria-label="Simulated Bills win probability history, ending at ${market.yes} percent"><path d="M0 10H380 M0 60H380 M0 110H380" stroke="var(--stroke-std)" fill="none"/><polyline points="${points}" fill="none" stroke="var(--chart-1)" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/><circle cx="380" cy="${110-market.yes}" r="5" fill="var(--chart-1)"/></svg><div class="promptAxis"><span>Recent trend</span><span>Now</span></div></div><div class="promptGraphValue">${market.yes}%<small>chance to win</small></div></div>` : '';
-    el.innerHTML = `<div class="promptTop">${brandLogoHTML()}<span class="promptMatch">Texans @ Bills</span></div><h2 class="promptQuestion">Will the Bills win?</h2>${chart}<div class="promptFooter"><span class="promptAction"><span class="promptOK">OK</span> Explore predictions</span>${variant === 'question' ? `<span class="promptChance">${market.yes}% chance</span>` : ''}</div>`;
+    el.innerHTML = `<div class="promptTop">${brandLogoHTML()}<span class="promptMatch">Texans @ Bills</span></div><h2 class="promptQuestion">Will the Bills win?</h2>${chart}<div class="promptFooter"><span class="promptAction">Press <span class="promptOK">OK</span> Explore Predictions</span>${variant === 'question' ? `<span class="promptChance">${market.yes}% chance</span>` : ''}</div>`;
   }
   document.getElementById('promptVariantLabel').textContent = ['Original · 1/3','Question · 2/3','Graph · 3/3'][promptVariant];
 }
