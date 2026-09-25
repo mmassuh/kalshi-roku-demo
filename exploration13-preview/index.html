@@ -706,8 +706,17 @@ html,body{height:100%;background:#000;overflow:hidden;font-family:var(--font-bod
    actual cause (a missing `min-height:0` on #cardTrack, see its own comment below) has
    since been fixed directly, so #cardWrap/.evCard now genuinely fill whatever height this
    header leaves them, at any header height, with no hardcoded budget between them. */
-#pHeader{flex:0 0 118px;display:flex;flex-direction:column;justify-content:center;gap:6px;padding:10px 40px;border-bottom:1.5px solid var(--stroke-hair);}
-#pHeader .hdrRow{display:flex;align-items:center;justify-content:space-between;width:100%;}
+#pHeader{flex:0 0 136px;display:flex;flex-direction:column;justify-content:center;gap:8px;padding:12px 32px;border-bottom:1.5px solid var(--stroke-hair);}
+#pHeader .hdrRow{display:flex;align-items:center;width:100%;}
+#pHeader .hdrRow1{height:44px;justify-content:flex-start;}
+#pHeader .hdrRow2{height:60px;gap:8px;justify-content:flex-start;}
+#pHeader .hdrRow2>.authStatus,
+#pHeader .hdrRow2>.hdrRightGroup>.authStatus,
+#pHeader .hdrRow2>.hdrRightGroup>.balance{height:48px;box-sizing:border-box;}
+#pHeader .hdrRow2>.authStatus{margin:0;}
+#pHeader .hdrRow2 .authStatus{font-size:18px;line-height:22px;border-radius:14px;padding:0 12px;background:var(--fill-subtle);transition:background 150ms,transform 150ms;}
+#pHeader .hdrRow2 .authStatus.focused{transform:scale(1.035);background:var(--surface-raised);}
+#pHeader .hdrRow2 .authStatus svg{width:22px;height:22px;flex:0 0 22px;}
 /* Global Header (exploration04 nav-architecture pass) — ALWAYS the Kalshi brandmark, never
    replaced by a page label (rule 4). It is also now the persistent Home control (rule 5):
    focusable, same focus-ring treatment as every other header chip. */
@@ -715,7 +724,7 @@ html,body{height:100%;background:#000;overflow:hidden;font-family:var(--font-bod
    there is deliberately no .brandmark.focused rule: it can never carry a focus ring.
 
    Shared logo renderer: independent from application typography; see BRANDING.md. */
-#pHeader .brandmark{display:flex;align-items:center;flex-shrink:0;color:var(--brand);padding:4px 8px;margin:-4px -8px;}
+#pHeader .brandmark{display:flex;align-items:center;flex-shrink:0;color:var(--brand);padding:0;margin:0;}
 .brandLogoText{display:block;font-family:var(--logo-font);font-weight:var(--logo-weight);font-size:var(--logo-height);line-height:1;letter-spacing:var(--logo-tracking);text-transform:var(--logo-case);font-stretch:normal;}
 .brandLogoImage{display:block;height:var(--logo-height);width:auto;max-width:100%;object-fit:contain;flex-shrink:0;}
 
@@ -743,8 +752,8 @@ html,body{height:100%;background:#000;overflow:hidden;font-family:var(--font-bod
    header alignment fix: "Balance" and "$250.00" now sit on ONE line, so .lbl no longer needs
    the small-caps/letter-spacing treatment that suited a stacked label above a value — plain
    mixed-case reads more naturally inline ("Balance $250.00", not "BALANCE $250.00"). */
-#pHeader .balance .lbl{font:var(--weight-medium) 20px/1 var(--font-body);color:var(--text-3);}
-#pHeader .balance .val{font:var(--weight-medium) 24px/1 var(--font-body);color:var(--text-1);font-variant-numeric:tabular-nums;transition:color .3s;}
+#pHeader .balance .lbl{font:var(--weight-medium) 16px/1 var(--font-body);color:var(--text-3);}
+#pHeader .balance .val{font:var(--weight-medium) 19px/1 var(--font-body);color:var(--text-1);font-variant-numeric:tabular-nums;transition:color .3s;}
 #pHeader .balance .val.tick{color:var(--trade-yes);}
 
 #pBody{flex:1;position:relative;overflow:hidden;}
@@ -1422,26 +1431,26 @@ html,body{height:100%;background:#000;overflow:hidden;font-family:var(--font-bod
    it now sits inside a filled circular avatar affordance — same "tinted circle around a
    glyph" language .mrow .avatar already uses elsewhere in this file, just circular instead
    of rounded-square to read unambiguously as a person/account control. */
-#pHeader .balance{display:flex;align-items:center;gap:14px;border-radius:12px;padding:6px 12px;margin:-6px -12px;transition:background 150ms;}
+#pHeader .balance{display:flex;align-items:center;gap:8px;height:48px;border-radius:14px;padding:0 10px;margin:0;background:var(--fill-subtle);transition:background 150ms,transform 150ms;}
 /* E04 compact-header alignment fix: label + value on one line (was a stacked, right-aligned
    two-line block) — a simple baseline-aligned row now that the avatar sits at the far end
    instead of the near end, so there's no longer a "stack it to keep the block narrow next
    to the avatar" reason to keep them on separate lines. */
-#pHeader .balance .txt{display:flex;align-items:baseline;gap:8px;}
-#pHeader .avatarCircle{width:44px;height:44px;flex:0 0 44px;border-radius:50%;background:var(--fill-ctl);display:flex;align-items:center;justify-content:center;transition:background 150ms;}
-#pHeader .acctGlyph{width:24px;height:24px;flex:0 0 24px;color:var(--text-2);transition:color 150ms;}
+#pHeader .balance .txt{display:flex;align-items:baseline;gap:5px;min-width:0;}
+#pHeader .avatarCircle{width:34px;height:34px;flex:0 0 34px;border-radius:50%;background:var(--fill-ctl);display:flex;align-items:center;justify-content:center;transition:background 150ms;}
+#pHeader .acctGlyph{width:20px;height:20px;flex:0 0 20px;color:var(--text-2);transition:color 150ms;}
 #pHeader .balance.focused .acctGlyph{color:var(--text-1);}
 #pHeader .balance.signin .avatarCircle{background:var(--brand-tint);}
 #pHeader .balance.signin .acctGlyph{color:var(--brand);}
-#pHeader .balance.focused{outline:4px solid var(--focus-ring);outline-offset:3px;background:var(--surface-raised);}
+#pHeader .balance.focused{outline:4px solid var(--focus-ring);outline-offset:3px;background:var(--surface-raised);transform:scale(1.035);}
 #pHeader .balance.signin .val{color:var(--brand);}
 
 /* ============================================================
    exploration07 — USER COMMUNICATION SYSTEM: header bell, badge, and right-side grouping.
    ============================================================ */
-.hdrRightGroup{display:flex;align-items:center;gap:20px;}
-.commsChip{position:relative;padding:8px;}
-.commsChip svg{width:28px;height:28px;display:block;}
+.hdrRightGroup{display:flex;align-items:center;gap:8px;margin-left:auto;}
+.commsChip{position:relative;padding:0 12px !important;min-width:48px;justify-content:center;}
+.commsChip svg{width:24px;height:24px;display:block;}
 .commsBadge{position:absolute;top:0;right:0;min-width:22px;height:22px;padding:0 5px;border-radius:var(--shape-badge);background:var(--no);color:var(--on-fill);font:var(--weight-bold) 15px/22px var(--font-body);text-align:center;font-variant-numeric:tabular-nums;box-shadow:0 0 0 3px var(--surface-panel);}
 
 /* ---------- Communication Center rows (reuses .mrow/.avatar/.mid/.right/.chev + .groupLabel,
@@ -1651,10 +1660,10 @@ html,body{height:100%;background:#000;overflow:hidden;font-family:var(--font-bod
    "change policy"/"lock trading now" screen it shows once already unlocked. */
 .authStatus.toggleChip{color:var(--text-2);}
 .authStatus.toggleChip.on{color:var(--text-1);}
-.authStatus.toggleChip .swTrack{position:relative;width:44px;height:24px;border-radius:12px;background:var(--fill-ctl);border:1.5px solid var(--stroke-std);flex:0 0 44px;transition:background 150ms,border-color 150ms;}
-.authStatus.toggleChip .swKnob{position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:var(--text-3);transition:transform 150ms,background 150ms;}
+.authStatus.toggleChip .swTrack{position:relative;width:38px;height:22px;border-radius:11px;background:var(--fill-ctl);border:1.5px solid var(--stroke-std);flex:0 0 38px;transition:background 150ms,border-color 150ms;}
+.authStatus.toggleChip .swKnob{position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:var(--text-3);transition:transform 150ms,background 150ms;}
 .authStatus.toggleChip.on .swTrack{background:var(--brand);border-color:var(--brand);}
-.authStatus.toggleChip.on .swKnob{transform:translateX(22px);background:var(--on-brand-knob);}
+.authStatus.toggleChip.on .swKnob{transform:translateX(16px);background:var(--on-brand-knob);}
 .authStatus.toggleChip.expiring .swKnob{background:var(--warn);}
 .authStatus.toggleChip .swLabel{white-space:nowrap;}
 .authStatus.toggleChip.on .swLabel{font-weight:600;}
@@ -2710,8 +2719,8 @@ function headerElId(id){ return id==='auth'?'#authChip':id==='positions'?'#posCh
 // alone in Row 1; 'positions'/'comms'/'balance' share Row 2. headerOrder() above is still the
 // single left-to-right/OK-semantics source of truth (unchanged); this is purely the spatial
 // lookup headerKey needs to move Up/Down between rows and Left/Right within one.
-function headerRowOf(id){ return id==='auth' ? 1 : 2; }
-function headerRowItems(row){ return headerOrder().filter(id=>headerRowOf(id)===row); }
+function headerRowOf(id){ return 2; }
+function headerRowItems(row){ return row===2 ? headerOrder() : []; }
 /* ============================================================
    CONTEXTUAL NAVIGATION — ANCESTRY MODEL (exploration04 nav-architecture FIX pass; revised
    2026-09-09 to also fix a missing-ancestor bug: Positions/Account reached via the Global
@@ -2864,7 +2873,7 @@ function renderHeader(){
   // .hdrRightGroup wrapper rather than as a third space-between child — #pHeader .hdrRow's
   // existing `justify-content:space-between` rule (unmodified, still used by Row 1 and by
   // every other screen that never sees this row) still only ever sees two children.
-  $('#pHeader').innerHTML = `<div class="hdrRow hdrRow1">${left}${authHTML}</div><div class="hdrRow hdrRow2">${posChipHTML}<div class="hdrRightGroup">${commsChip}${right}</div></div>`;
+  $('#pHeader').innerHTML = `<div class="hdrRow hdrRow1">${left}</div><div class="hdrRow hdrRow2">${authHTML}${posChipHTML}<div class="hdrRightGroup">${commsChip}${right}</div></div>`;
 }
 /* ============================================================
    GLOBAL HEADER — key handling (exploration04 nav-architecture pass, rule 17/19). Shared by
@@ -2876,43 +2885,25 @@ function renderHeader(){
    ============================================================ */
 function headerKey(ok, back, dir, exitToContent){
   if (back){ closePanel(); return; }
-  // E04 two-row header pass: Left/Right now move within the CURRENT row only (Row 1 has just
-  // Trading; Row 2 has Positions/Balance) — Up/Down move between the two rows instead, with
-  // Down only exiting to content once already on Row 2 (the row physically adjacent to it)
-  // and Up only bouncing once already on Row 1 (the topmost row). This replaces the old
-  // single flat left-to-right order used directly for D-pad movement; headerOrder() itself
-  // is unchanged and still the source of truth for OK-semantics and entry defaults.
-  const curRow = headerRowOf(S.headerFocus);
-  if (dir==='down'){
-    if (curRow===1){
-      const row2 = headerRowItems(2);
-      S.headerFocus = row2[row2.length-1] || row2[0]; // land on Balance, directly below Trading
-      renderHeader();
-    } else {
-      S.hdrActive=false; exitToContent();
-    }
-    return;
-  }
-  if (dir==='up'){
-    if (curRow===2){
-      const row1 = headerRowItems(1);
-      if (row1.length){ S.headerFocus=row1[row1.length-1]; renderHeader(); }
-      else bounce(headerElId(S.headerFocus),'y'); // Trading not shown (signed out) — nothing above
-    } else {
-      bounce(headerElId(S.headerFocus),'y');
-    }
-    return;
-  }
+  const order = headerOrder();
+  const idx = order.indexOf(S.headerFocus);
   if (dir==='left'){
-    const rowItems = headerRowItems(curRow);
-    const i = rowItems.indexOf(S.headerFocus);
-    if (i>0){ S.headerFocus=rowItems[i-1]; renderHeader(); } else bounce(headerElId(S.headerFocus),'x');
+    if (idx>0){ S.headerFocus=order[idx-1]; renderHeader(); }
+    else bounce(headerElId(S.headerFocus),'x');
     return;
   }
   if (dir==='right'){
-    const rowItems = headerRowItems(curRow);
-    const i = rowItems.indexOf(S.headerFocus);
-    if (i>=0 && i<rowItems.length-1){ S.headerFocus=rowItems[i+1]; renderHeader(); } else bounce(headerElId(S.headerFocus),'x');
+    if (idx>=0 && idx<order.length-1){ S.headerFocus=order[idx+1]; renderHeader(); }
+    else bounce(headerElId(S.headerFocus),'x');
+    return;
+  }
+  if (dir==='down'){
+    S.hdrActive=false;
+    exitToContent();
+    return;
+  }
+  if (dir==='up'){
+    bounce(headerElId(S.headerFocus),'y');
     return;
   }
   if (ok){
