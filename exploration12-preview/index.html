@@ -2497,7 +2497,11 @@ function revealCardGraph(card){
   });
 }
 function revealActiveCardGraph(){
-  revealCardGraph(document.querySelector('#cardTrack .evCard.active'));
+  const cards = document.querySelectorAll('#cardTrack .evCard');
+  // When a Discovery tab is focused, no Event card carries .active yet. The selected tab
+  // still presents its first/current card on screen, so reveal S.rowIdx (reset to 0 on a
+  // tab change) instead of waiting for Down to move focus into the card rail.
+  revealCardGraph(document.querySelector('#cardTrack .evCard.active') || cards[S.rowIdx] || cards[0]);
 }
 
 // Live-tick patch for one Market's line inside whichever card currently holds it --
