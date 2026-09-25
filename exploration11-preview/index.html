@@ -1090,15 +1090,6 @@ html,body{height:100%;background:#000;overflow:hidden;font-family:var(--font-bod
 .evCard .cardGraphAxisX{display:flex;justify-content:space-between;margin-top:6px;font:500 14px/1 var(--font-body);color:var(--text-3);}
 .evCard .cardGraphLine{fill:none;stroke-width:2.5px;stroke-linejoin:round;stroke-linecap:round;}
 .evCard .cardGraphDot{stroke:var(--surface-card);stroke-width:1.5px;}
-/* Exploration 11: Market-card charts stay undrawn until their card becomes active/visible.
-   The plot geometry is already mounted so layout never shifts; only the data strokes reveal.
-   Each Event animates once per session, then continues using the existing live-tick updates. */
-.evCard .cardGraph.graphPending .cardGraphLine{stroke-dasharray:1;stroke-dashoffset:1;}
-.evCard .cardGraph.graphPending .cardGraphDot{opacity:0;transform:scale(.65);transform-box:fill-box;transform-origin:center;}
-.evCard .cardGraph.graphDrawing .cardGraphLine{stroke-dasharray:1;stroke-dashoffset:0;transition:stroke-dashoffset 620ms cubic-bezier(.2,0,0,1);transition-delay:var(--draw-delay,0ms);}
-.evCard .cardGraph.graphDrawing .cardGraphDot{opacity:1;transform:scale(1);transform-box:fill-box;transform-origin:center;transition:opacity 140ms ease,transform 180ms cubic-bezier(.2,0,0,1);transition-delay:var(--dot-delay,560ms);}
-.evCard .cardGraph.graphRevealed .cardGraphLine{stroke-dasharray:none;stroke-dashoffset:0;}
-.evCard .cardGraph.graphRevealed .cardGraphDot{opacity:1;transform:none;}
 /* Total Event volume -- same figure as the (previously unused-in-card) EVENTS[].vol
    field, now surfaced directly on the card, mirroring kalshi.com's Event page. Muted/
    secondary, never competing with the question or the Market rows for attention.
@@ -2441,10 +2432,8 @@ function cardGraphPoints(history, vp){
     CARD_GRAPH_PAD_Y + (1-((v-vMin)/vRange))*usableH,
   ]);
 }
-const REVEALED_CARD_GRAPHS = new Set();
 function cardGraphHTML(ev, mks){
   const vp = cardGraphViewport(ev, mks);
-  const alreadyRevealed = REVEALED_CARD_GRAPHS.has(ev.id);
   const lines = mks.map((mk,i)=>{
     const pts = cardGraphPoints(mk.history, vp);
     const last = pts[pts.length-1];
@@ -2460,46 +2449,14 @@ function cardGraphHTML(ev, mks){
   const axisHTML =
       `<text class="cardGraphAxisLabel" x="${CARD_GRAPH_W+10}" y="${CARD_GRAPH_PAD_Y}" dominant-baseline="hanging">${Math.round(vp[1])}%</text>`
     + `<text class="cardGraphAxisLabel" x="${CARD_GRAPH_W+10}" y="${CARD_GRAPH_H-CARD_GRAPH_PAD_Y}" dominant-baseline="alphabetic">${Math.round(vp[0])}%</text>`;
-  const polylines = lines.map((l,i)=>`<polyline class="cardGraphLine" data-mid="${l.mId}" pathLength="1" points="${l.ptsAttr}" style="stroke:${l.color};--draw-delay:${i*45}ms"></polyline>`).join('');
-  const dots = lines.map((l,i)=>`<circle class="cardGraphDot" data-mid="${l.mId}" cx="${l.lastX}" cy="${l.lastY}" r="3.5" style="fill:${l.color};--dot-delay:${560+i*45}ms"></circle>`).join('');
+  const polylines = lines.map(l=>`<polyline class="cardGraphLine" data-mid="${l.mId}" points="${l.ptsAttr}" style="stroke:${l.color}"></polyline>`).join('');
+  const dots = lines.map(l=>`<circle class="cardGraphDot" data-mid="${l.mId}" cx="${l.lastX}" cy="${l.lastY}" r="3.5" style="fill:${l.color}"></circle>`).join('');
   const monthsHTML = CARD_GRAPH_MONTHS.map(m=>`<span>${m}</span>`).join('');
-  return `<div class="cardGraph ${alreadyRevealed?'graphRevealed':'graphPending'}" data-event-id="${ev.id}">
+  return `<div class="cardGraph">
     <svg class="cardGraphSvg" viewBox="0 0 ${CARD_GRAPH_W+CARD_GRAPH_LABEL_W} ${CARD_GRAPH_H}" preserveAspectRatio="none">${axisHTML}${polylines}${dots}</svg>
     <div class="cardGraphAxisX">${monthsHTML}</div>
   </div>`;
 }
-function revealCardGraph(card){
-  if (!card) return;
-  const chart = card.querySelector('.cardGraph');
-  if (!chart) return;
-  const eventId = card.dataset.id || chart.dataset.eventId;
-  if (!eventId) return;
-
-  // A full render can remount a previously-seen card. Keep those charts visible instantly;
-  // only a genuinely new Event gets the draw-on reveal.
-  if (REVEALED_CARD_GRAPHS.has(eventId)){
-    chart.classList.remove('graphPending','graphDrawing');
-    chart.classList.add('graphRevealed');
-    return;
-  }
-  if (!chart.classList.contains('graphPending')) return;
-
-  REVEALED_CARD_GRAPHS.add(eventId);
-  requestAnimationFrame(()=>{
-    requestAnimationFrame(()=>{
-      chart.classList.remove('graphPending');
-      chart.classList.add('graphDrawing');
-      setTimeout(()=>{
-        chart.classList.remove('graphDrawing');
-        chart.classList.add('graphRevealed');
-      }, 760);
-    });
-  });
-}
-function revealActiveCardGraph(){
-  revealCardGraph(document.querySelector('#cardTrack .evCard.active'));
-}
-
 // Live-tick patch for one Market's line inside whichever card currently holds it --
 // same in-place-SVG-attribute-patch discipline as updateDetailLive's dSparkLine/dSparkDot
 // patch above, and the same global-selector pattern as updateCardMarketRow below (market
@@ -3114,10 +3071,7 @@ function renderList(back){
   // card navigation — never reaches this line at all: moveCardFocus() patches classes in place
   // on the EXISTING #cardTrack (no render(), no rebuild) and calls scrollCardsToFocus() with no
   // argument, so its transition still animates normally.
-  if (S.listState==='ready'){
-    scrollCardsToFocus(true);
-    revealActiveCardGraph();
-  } else scrollListToFocus();
+  if (S.listState==='ready') scrollCardsToFocus(true); else scrollListToFocus();
   // E05: every render() of this screen remounts a still-expanded Market's .cardExpand at
   // height:0 (see marRowHTML) — this is the ONE place that resyncs it back to its real
   // content height, so every call site that mutates S.cardTrade and re-renders (a side
@@ -3255,7 +3209,6 @@ function moveCardFocus(newCardIdx){
   const navL = $('#cardNavL'); if (navL) navL.classList.toggle('show', newCardIdx>0);
   const navR = $('#cardNavR'); if (navR) navR.classList.toggle('show', newCardIdx<total-1);
   scrollCardsToFocus();
-  revealCardGraph(newCard);
   scrollMarketsToFocus(); // E05: reset/apply the new card's own vertical scroll (S.marketIdx just reset to 0 above)
 }
 // Priority 0 — Up/Down between Market rows inside the currently-focused card only: toggles
