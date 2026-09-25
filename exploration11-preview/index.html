@@ -653,7 +653,7 @@ html,body{height:100%;background:#000;overflow:hidden;font-family:var(--font-bod
 /* ============================================================
    ENTRY POINT — "Kalshi · Predict" pill (bottom-right, safe area)
    ============================================================ */
-#entry{position:absolute;right:48px;bottom:48px;display:flex;align-items:center;gap:14px;height:64px;padding:0 28px;border-radius:var(--shape-nav-item);background:var(--surface-overlay);border:2px solid var(--stroke-std);color:var(--text-1);font:var(--weight-medium) 24px/1 var(--font-body);opacity:0;transform:translateY(12px);transition:opacity .5s,transform .18s cubic-bezier(.2,0,0,1),outline-color .15s,height .18s cubic-bezier(.2,0,0,1),padding .18s cubic-bezier(.2,0,0,1),background .18s ease;z-index:5;}
+#entry{position:absolute;right:48px;bottom:48px;display:flex;align-items:center;gap:14px;height:64px;padding:0 28px;border-radius:var(--shape-nav-item);background:var(--surface-overlay);border:2px solid var(--stroke-std);color:var(--text-1);font:var(--weight-medium) 24px/1 var(--font-body);opacity:0;transform:translateY(12px);transition:opacity .5s,transform .18s cubic-bezier(.2,0,0,1),outline-color .15s,height .18s cubic-bezier(.2,0,0,1),padding .18s cubic-bezier(.2,0,0,1),border-radius .18s cubic-bezier(.2,0,0,1),background .18s ease;z-index:5;}
 #entry.ambient{opacity:.85;transform:none;}
 /* Compact mark uses BRAND_LOGOS too. */
 #entry .kdot{width:28px;height:28px;flex-shrink:0;border-radius:var(--radius-sm);background:var(--brand);color:var(--on-brand-ink);display:flex;align-items:center;justify-content:center;}
@@ -661,7 +661,7 @@ html,body{height:100%;background:#000;overflow:hidden;font-family:var(--font-bod
    while ambient, so focus can expand the pill smoothly in both width and height. */
 #entry .okHint{display:flex;align-items:center;max-width:0;max-height:0;margin-left:0;opacity:0;overflow:hidden;transform:scale(.82);pointer-events:none;color:var(--text-3);font:var(--weight-medium) 20px/1 var(--font-body);letter-spacing:.05em;transition:max-width .18s cubic-bezier(.2,0,0,1),max-height .18s cubic-bezier(.2,0,0,1),margin-left .18s cubic-bezier(.2,0,0,1),opacity .10s ease,transform .18s cubic-bezier(.2,0,0,1);}
 #entry.focused{opacity:1;outline:4px solid var(--focus-ring);outline-offset:3px;transform:scale(1.04);background:var(--surface-raised);}
-#entry:not(.contextual).focused{height:78px;padding-top:5px;padding-bottom:5px;}
+#entry:not(.contextual).focused{height:78px;padding-top:5px;padding-bottom:5px;border-radius:39px;}
 #entry.focused .okHint{max-width:60px;max-height:56px;margin-left:6px;opacity:1;transform:none;pointer-events:auto;}
 /* Exploration 11: contextual prompts share the existing TV entry focus/input. */
 #entry.contextual{height:auto;padding:28px 24px;width:550px;box-sizing:border-box;display:block;border-radius:var(--radius-lg);background:var(--surface-panel);transition:opacity .18s ease,transform .18s cubic-bezier(.2,0,0,1),outline-color .12s ease,background .18s ease;}
