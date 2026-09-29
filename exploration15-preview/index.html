@@ -257,19 +257,13 @@
   --skel-base:rgba(255,255,255,.06);
   --skel-highlight:rgba(255,255,255,.13);
   /* ---------- Chart line colors ---------- */
-  /* chart-1 (exploration09 color-refinement pass): this is the Event Card's
-     probability-over-time graph — a categorical palette coloring each Market's line/dot
-     (cardGraphColors(), cycled i%5), the same "Market visualization" role as the Market
-     bar (.marRow .barFill, also moved to --brand this pass), not a literal Yes-side
-     indicator. Was var(--yes); now var(--brand) — identical value for Kalshi (--brand IS
-     --yes there), but now correctly follows Roku purple/Polymarket blue instead of staying
-     stuck on Kalshi green (Polymarket's own theme block already made this exact choice
-     independently — see its --chart-1 override below, now redundant but left in place). */
-  --chart-1:#28CC95;
-  --chart-2:#58A6FF;
-  --chart-3:#F2CC60;
-  --chart-4:#C49BFF;
-  --chart-5:#FF8097;
+  /* Independent categorical palette. Brand color is reserved for focus, selection and
+     actions so data visualization keeps its own visual rhythm. */
+  --chart-1:#58A6FF;
+  --chart-2:#F2CC60;
+  --chart-3:#C49BFF;
+  --chart-4:#FF8097;
+  --chart-5:#59D6C5;
   /* ---------- Celebration — surface + text on the Win Celebration surface ----------
      --celebration-surface (exploration09) is new: #celebrationOverlay's background was
      previously the literal `var(--yes)` — fine for Kalshi where brand color IS the Yes/win
@@ -364,13 +358,13 @@ html[data-theme="roku"]{
   --choice-action-text:var(--action-primary-text);
   --choice-focus:var(--action-primary-focus);
 
-  /* Authored categorical chart palette; light violet stays legible on dark cards. */
-  --chart-1:#BE8CF2;
+  /* Categorical chart palette intentionally excludes Roku brand purple. */
+  --chart-1:#78C8E8;
   --chart-2:#F0B66A;
-  --chart-3:#78C8E8;
-  --chart-4:#EF8EBC;
+  --chart-3:#EF8EBC;
+  --chart-4:#9FD680;
   --chart-5:#D7D3E0;
-  /* Focus stays neutral across skins; brand color remains reserved for state and action. */
+  /* Focus follows the active brand; chart colors remain independent. */
   --glow-brand:0 0 18px var(--brand);   /* Kalshi:10px — a touch stronger, "immediately obvious" TV focus */
 
   /* ---------- Stroke + Fill — less border-reliant, purple-tinted fills instead of neutral white ---------- */
@@ -403,13 +397,6 @@ html[data-theme="roku"]{
   /* ---------- Skeleton colors — dark neutral/purple, restrained highlight ---------- */
   --skel-base:rgba(102,45,145,.10);
   --skel-highlight:rgba(102,45,145,.22);
-
-  /* Chart colors intentionally not separately overridden here: chart-1 now inherits
-     var(--brand) from :root (exploration09 color-refinement pass), which already resolves
-     to Roku purple in this block — the probability graph follows brand automatically, no
-     Roku-specific line needed. Roku's charts direction ("cleaner, less decoration") is a
-     reduction, not a recolor, and there was no unnecessary decoration token to begin with,
-     so there's nothing else to turn down here. */
 
   /* ---------- Celebration — re-themed to belong to Roku (physics/timing untouched) ---------- */
   --celebration-surface:var(--brand);
@@ -460,7 +447,7 @@ html[data-theme="roku"]{
 }
 html[data-theme="polymarket"]{
   /* exploration09 — POLYMARKET: clean / market / data-driven. Poly Blue (#2E5CFF) is used
-     deliberately, not flooded — brand, selection, focus and the primary chart series, on an
+     deliberately, not flooded — brand, selection and focus, on an
      otherwise true-neutral black/white/gray palette. Typography moves to Inter with a
      restrained weight/tracking scale and far less uppercase tracking than Kalshi; shape
      moves further than Roku toward smaller radii and cleaner rectangular controls; shadows
@@ -510,7 +497,7 @@ html[data-theme="polymarket"]{
   --choice-action-text:var(--action-primary-text);
   --choice-focus:var(--action-primary-focus);
 
-  /* Focus stays neutral across skins; brand color remains reserved for state and action. */
+  /* Focus follows the active brand; chart colors remain independent. */
   --glow-brand:0 0 6px var(--brand);         /* Kalshi:10px — minimal glow per the brand direction */
   --shadow-card:0 6px 18px rgba(0,0,0,.35);  /* Kalshi: 0 12px 32px .4 — restrained elevation */
 
@@ -545,12 +532,12 @@ html[data-theme="polymarket"]{
   --skel-base:rgba(255,255,255,.05);
   --skel-highlight:rgba(255,255,255,.11);
 
-  /* Independent Polymarket chart palette; no inherited Kalshi mint. */
-  --chart-1:#6B8AFF;
-  --chart-2:#B8C2D1;
+  /* Independent Polymarket chart palette intentionally excludes brand blue. */
+  --chart-1:#72C9EC;
+  --chart-2:#E8B778;
   --chart-3:#B39AF4;
-  --chart-4:#E8B778;
-  --chart-5:#72C9EC;
+  --chart-4:#F08AA8;
+  --chart-5:#8ED5A6;
 
   /* ---------- Celebration — Poly Blue / white / black, less casino-green (physics/timing
      untouched); one restrained warm accent (confetti-3's gold) is kept as the "complementary
@@ -824,7 +811,7 @@ html,body{height:100%;background:#000;overflow:hidden;font-family:var(--font-bod
 .marRow .mult{font:500 20px/1 var(--font-body);color:var(--text-3);font-variant-numeric:tabular-nums;transition:color .2s;}
 .marRow .pct{font:var(--weight-medium) 26px/32px var(--font-body);color:var(--text-1);font-variant-numeric:tabular-nums;transition:color .2s;}
 .marRow .bar{height:8px;border-radius:4px;background:var(--fill-ctl);overflow:hidden;}
-.marRow .barFill{height:100%;border-radius:4px;background:var(--brand);transition:width 400ms ease-out;}
+.marRow .barFill{height:100%;border-radius:4px;background:var(--chart-1);transition:width 400ms ease-out;}
 .marRow.tickUp .pct{color:var(--trade-yes);}
 .marRow.tickDown .pct{color:var(--trade-no);}
 .marRow.focused{background:var(--surface-raised);transform:scale(1.02);outline:4px solid var(--focus-ring);outline-offset:3px;}
