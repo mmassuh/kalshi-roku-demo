@@ -844,7 +844,9 @@ html,body{height:100%;background:#000;overflow:hidden;font-family:var(--font-bod
    breathing room so a one-row card never reads as broken/empty — a type-scale bump in the
    same spirit as .h2h above, not a different component. */
 .marRow.solo{padding:26px 22px;gap:16px;}
-.marRow.solo .name{font:var(--weight-medium) 30px/36px var(--font-display);white-space:normal;}
+.marRow.solo .top{flex-direction:column;align-items:stretch;gap:12px;}
+.marRow.solo .name{font:var(--weight-medium) 28px/34px var(--font-display);white-space:normal;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;}
+.marRow.solo .pctWrap{align-self:flex-end;}
 .marRow.solo .pct{font:var(--weight-medium) 44px/48px var(--font-numeric);}
 .marRow.solo .mult{font:500 22px/1 var(--font-body);}
 .marRow.solo .bar{height:16px;margin-top:4px;}
