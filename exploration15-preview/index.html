@@ -1633,6 +1633,8 @@ html,body{height:100%;background:#000;overflow:hidden;font-family:var(--font-bod
    sign-out focus ring survives overscan on a real set */
 #acct{padding:0 40px 48px;}
 .accountTabs{flex:0 0 88px;display:flex;align-items:center;gap:12px;padding:10px 0;}
+.accountTabs .tab{position:relative;overflow:visible;}
+.accountTabs .commsBadge{top:-8px;right:-8px;}
 .accountBody{display:flex;flex-direction:column;flex:1;min-height:0;}
 .accountBody #listWrap{padding:10px;}
 .acctBlock{margin-bottom:28px;}
@@ -2050,14 +2052,18 @@ function unreadCommCount(){ return commEvents.filter(e=>!e.read).length; }
 // change never has to force a full renderHeader() from an arbitrary call site (settlePosition
 // may fire while the user is anywhere in the app, not only with the header mounted/visible).
 function refreshCommsBadge(){
-  const el = document.querySelector('#acctChip .avatarCircle');
-  if (!el) return;
   const n = unreadCommCount();
-  let badge = el.querySelector('.commsBadge');
-  if (n>0){
-    if (!badge){ badge = document.createElement('span'); badge.className='commsBadge'; el.appendChild(badge); }
-    badge.textContent = n>9 ? '9+' : String(n);
-  } else if (badge){ badge.remove(); }
+  const targets = [
+    document.querySelector('#acctChip .avatarCircle'),
+    document.querySelector('#accountTab1')
+  ].filter(Boolean);
+  targets.forEach(el=>{
+    let badge = el.querySelector('.commsBadge');
+    if (n>0){
+      if (!badge){ badge = document.createElement('span'); badge.className='commsBadge'; el.appendChild(badge); }
+      badge.textContent = n>9 ? '9+' : String(n);
+    } else if (badge){ badge.remove(); }
+  });
 }
 // "Today" / "Yesterday" / a plain date — calendar-day difference, not a raw 24h bucket (a
 // message from 25 hours ago that was still yesterday-evening should say "Yesterday", not
@@ -4998,9 +5004,11 @@ function renderAccount(){
   const acctCtxFocusedIdx = S.acctCtxFocus && !S.hdrActive ? S.acctCtxIdx : -1;
   const justLoaded = S._contentJustLoaded; S._contentJustLoaded = false;
   const tabsFocused = S.accountZone==='tabs' && !S.hdrActive && !S.acctCtxFocus;
+  const unread = unreadCommCount();
+  const messageBadge = unread ? `<span class="commsBadge">${unread>9?'9+':unread}</span>` : '';
   const tabs = `<div class="accountTabs">
     <div class="tab ${S.accountTab===0?'active':''} ${tabsFocused&&S.accountTab===0?'focused':''}" id="accountTab0">Balance</div>
-    <div class="tab ${S.accountTab===1?'active':''} ${tabsFocused&&S.accountTab===1?'focused':''}" id="accountTab1">Messages${unreadCommCount()?` · ${unreadCommCount()}`:''}</div>
+    <div class="tab ${S.accountTab===1?'active':''} ${tabsFocused&&S.accountTab===1?'focused':''}" id="accountTab1">Messages${messageBadge}</div>
   </div>`;
   const balanceContent = `
     <div class="acctBlock">
