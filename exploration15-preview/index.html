@@ -1033,10 +1033,9 @@ html,body{height:100%;background:#000;overflow:hidden;font-family:var(--font-bod
    Left/Right moves the focused card; Up/Down moves the focused Market row inside it;
    OK opens Market Detail on that Market directly (openDetail, unchanged).
    ============================================================ */
-/* E04 fill-available-height pass: top/bottom padding trimmed (20/4 -> 6/0) — pure outer
-   framing around the whole card slider, not "internal card layout" — to give back the
-   room the #cardTrack min-height:0 fix (above) now correctly withholds from oversized
-   cards. Horizontal padding (40px, aligned with the header/tabs margin) is untouched. */
+/* The card viewport reserves vertical clearance for the focused-card scale: 20px above
+   for the lifted top edge and 16px below before pagination. Horizontal padding (40px,
+   aligned with the header/tabs margin) remains unchanged. */
 #cardWrap{flex:1;position:relative;overflow:hidden;padding:20px 40px 16px;display:flex;flex-direction:column;}
 /* min-height:0 is the fix, not decoration: #cardTrack is a flex ITEM of #cardWrap's column
    layout (so its height is that context's main axis) but is ALSO itself a flex CONTAINER
@@ -1058,10 +1057,9 @@ html,body{height:100%;background:#000;overflow:hidden;font-family:var(--font-bod
    card grew. scrollCardsToFocus()/moveCardFocus() need no changes: they read
    card.offsetWidth/offsetLeft/track.scrollWidth live off the DOM rather than a hardcoded
    400, so the slider positioning, clamping and peek affordance stay correct automatically. */
-/* Bottom padding trimmed (6px -> 2px), same fill-available-height pass — the card's own
-   outer edge below posIndicator, not any of the graph/question/market-row content above
-   it. Width/gap/border/radius and every other side are untouched. */
-.evCard{flex:0 0 420px;width:420px;background:var(--surface-card);border:1.5px solid var(--stroke-hair);border-radius:var(--shape-card-lg);padding:26px 26px 2px;display:flex;flex-direction:column;transform-origin:center;transition:background 180ms ease-out,border-color 180ms ease-out,transform 360ms cubic-bezier(.16,1,.3,1);will-change:transform;}
+/* The 8px bottom inset works with posIndicator's fixed footer height so its number never
+   sits against the card edge. Width/gap/border/radius remain unchanged. */
+.evCard{flex:0 0 420px;width:420px;background:var(--surface-card);border:1.5px solid var(--stroke-hair);border-radius:var(--shape-card-lg);padding:26px 26px 8px;display:flex;flex-direction:column;transform-origin:center;transition:background 180ms ease-out,border-color 180ms ease-out,transform 360ms cubic-bezier(.16,1,.3,1);will-change:transform;}
 /* "you are here" affordance for the whole card — deliberately NOT the focus ring; the
    ring (reused unmodified from .marRow.focused/.mrow.focused) stays on the one real focus
    target, the Market row inside. This is a quieter, lower-emphasis cue only. */
@@ -1129,7 +1127,7 @@ html,body{height:100%;background:#000;overflow:hidden;font-family:var(--font-bod
    viewport exactly, per the E04 fill-available-height pass), so nothing here changes for
    them. */
 .evCard .marTrack{display:flex;flex-direction:column;gap:6px;justify-content:flex-start;transition:transform 220ms cubic-bezier(.2,0,0,1);}
-.evCard .posIndicator{margin-top:6px;text-align:center;font:var(--weight-medium) 18px/1 var(--font-body);letter-spacing:.04em;color:var(--text-3);font-variant-numeric:tabular-nums;flex:0 0 auto;}
+.evCard .posIndicator{margin-top:6px;min-height:32px;display:flex;align-items:center;justify-content:center;text-align:center;font:var(--weight-medium) 18px/24px var(--font-body);letter-spacing:.04em;color:var(--text-3);font-variant-numeric:tabular-nums;flex:0 0 32px;}
 /* .groupDividerH (the persistent vertical "RELATED TO BUF vs HOU"/"TRENDING IN NFL" rail)
    was removed outright, not replaced with another vertical label or side rail: that
    context is already carried by the Live Game tab, the BUF vs HOU broadcast, and each
