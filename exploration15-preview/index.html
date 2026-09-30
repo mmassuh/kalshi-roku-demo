@@ -747,7 +747,8 @@ html,body{height:100%;background:#000;overflow:hidden;font-family:var(--font-bod
 @keyframes slideBack{from{transform:translateX(-48px);opacity:0;}to{transform:none;opacity:1;}}
 
 /* ---------- Tabs ---------- */
-#tabs{flex:0 0 104px;display:flex;align-items:flex-start;gap:12px;padding:18px 40px 0;}
+#tabs{flex:0 0 104px;display:block;overflow:hidden;padding:18px 40px 0;box-sizing:border-box;}
+#tabsTrack{display:flex;align-items:flex-start;gap:12px;width:max-content;transform:translateX(0);transition:transform 220ms cubic-bezier(.2,0,0,1);}
 .tab{height:56px;display:flex;align-items:center;padding:0 24px;border-radius:var(--shape-tab);font:var(--weight-medium) 24px/1 var(--font-body);color:var(--text-2);white-space:nowrap;transition:background .15s,color .15s,transform .15s;}
 .tab.active{background:var(--fill-ctl);color:var(--text-1);}
 .tab.focused{outline:4px solid var(--focus-ring);outline-offset:3px;background:var(--surface-raised);color:var(--text-1);transform:scale(1.035);}
@@ -1215,6 +1216,7 @@ html,body{height:100%;background:#000;overflow:hidden;font-family:var(--font-bod
   .skelFadeIn,.evCard.skelCardReveal .skelCardRevealItem,
   .cardExpandInner.skelTradeReveal{animation:none!important;}
   .screen.animIn,.screen.animBack,.skel::after,.chip.live i{animation:none!important;}
+  #tabsTrack{transition:none!important;}
   .cardGraph.graphDrawing .cardGraphLine,.cardGraph.graphDrawing .cardGraphDot{transition:none!important;}
 }
 /* Legacy row-shape aliases (Positions/initial-list skeleton rows, pre-existing markup kept
@@ -3058,9 +3060,9 @@ function headerSkeletonHTML(){
     </div>`;
 }
 function tabsSkeletonHTML(){
-  return `<div id="tabs">` +
+  return `<div id="tabs"><div id="tabsTrack">` +
     ['116px','150px','112px'].map(w=>skelPill(w,'56px')).join('') +
-    `</div>`;
+    `</div></div>`;
 }
 function marRowSkeletonHTML(){
   return `<div class="marRow skelMarRow">
@@ -3110,10 +3112,10 @@ function renderList(back){
     header.classList.remove('skelFadeIn');
     header.innerHTML = headerSkeletonHTML();
   }
-  const tabsHTML = S.shellBooted ? (`<div id="tabs" class="${shellJustLoaded?'skelFadeIn':''}">` + TABS.map((t,i)=>{
+  const tabsHTML = S.shellBooted ? (`<div id="tabs" class="${shellJustLoaded?'skelFadeIn':''}"><div id="tabsTrack">` + TABS.map((t,i)=>{
     const cls = ['tab', i===S.tab?'active':'', (S.listZone==='tabs'&&i===S.tabIdx)?'focused':''].join(' ');
     return `<div class="${cls}" data-i="${i}">${t.label}</div>`;
-  }).join('') + `</div>`) : tabsSkeletonHTML();
+  }).join('') + `</div></div>`) : tabsSkeletonHTML();
 
   let content;
   if (S.listState==='loading'){
@@ -3165,6 +3167,8 @@ function renderList(back){
   }
 
   body.innerHTML = `<div class="screen ${animCls()}" id="listScreen">${tabsHTML}${content}</div>`;
+  scrollTabsToFocus(Boolean(S._tabSlide));
+  S._tabSlide = false;
   // Horizontal-drift fix: this innerHTML rebuild just replaced #cardTrack itself with a brand
   // new element, so there is no meaningful "previous frame" for a CSS transition to slide from
   // — instant:true snaps it straight back to the already-correct position instead of letting
@@ -3333,6 +3337,39 @@ function moveMarketRowFocus(newMarketIdx){
   S.marketIdx = newMarketIdx;
   const neu = rows[newMarketIdx]; if (neu) neu.classList.add('focused');
   scrollMarketsToFocus(); // E05: keep the newly-focused row's own top edge in view (no-op pre-E05, see Task 7)
+}
+
+// Keeps the selected Discovery destination fully inside the panel. The track only slides
+// after a real Left/Right tab move; ordinary renders preserve its current offset without
+// replaying motion. Eight pixels inside each edge protect the external focus ring.
+function scrollTabsToFocus(animate){
+  const wrap = $('#tabs'), track = $('#tabsTrack');
+  if (!wrap || !track) return;
+  const tabs = track.querySelectorAll('.tab');
+  if (!tabs.length){ S.tabsScrollX=0; return; }
+  const idx = S.listZone==='tabs' ? S.tabIdx : S.tab;
+  const item = tabs[Math.max(0,Math.min(idx,tabs.length-1))];
+  const visibleW = wrap.clientWidth - 80;
+  const maxShift = Math.max(0, track.scrollWidth-visibleW);
+  const prior = Math.max(0,Math.min(S.tabsScrollX||0,maxShift));
+  const inset = 8;
+  let next = prior;
+  if (item.offsetLeft < prior+inset) next = item.offsetLeft-inset;
+  else if (item.offsetLeft+item.offsetWidth > prior+visibleW-inset){
+    next = item.offsetLeft+item.offsetWidth-visibleW+inset;
+  }
+  next = Math.max(0,Math.min(next,maxShift));
+  track.style.transition = 'none';
+  track.style.transform = `translateX(${-prior}px)`;
+  if (animate && next!==prior){
+    void track.offsetWidth;
+    track.style.transition = '';
+    track.style.transform = `translateX(${-next}px)`;
+  } else {
+    track.style.transform = `translateX(${-next}px)`;
+    requestAnimationFrame(()=>{ if (track.isConnected) track.style.transition=''; });
+  }
+  S.tabsScrollX = next;
 }
 // Live-tick patch for a Market row inside the card slider — same targeted in-place pattern
 // as updateEventListRow/handleEventListTick (below), just scoped to #cardTrack so it finds
@@ -5463,8 +5500,8 @@ function listKey(ok,back,dir){
     return;
   }
   if (S.listZone==='tabs'){
-    if (dir==='left'){ if(S.tabIdx>0){S.tabIdx--; S.tab=S.tabIdx; S.rowIdx=0; S.marketIdx=0; startTabLoading();} else bounce('#tabs','x'); }
-    else if (dir==='right'){ if(S.tabIdx<TABS.length-1){S.tabIdx++; S.tab=S.tabIdx; S.rowIdx=0; S.marketIdx=0; startTabLoading();} else bounce('#tabs','x'); }
+    if (dir==='left'){ if(S.tabIdx>0){S.tabIdx--; S.tab=S.tabIdx; S.rowIdx=0; S.marketIdx=0; S._tabSlide=true; startTabLoading();} else bounce('#tabs','x'); }
+    else if (dir==='right'){ if(S.tabIdx<TABS.length-1){S.tabIdx++; S.tab=S.tabIdx; S.rowIdx=0; S.marketIdx=0; S._tabSlide=true; startTabLoading();} else bounce('#tabs','x'); }
     else if (dir==='up'){
       S.listZone='header';
       if (!headerOrder().includes(S.headerFocus)) S.headerFocus='balance';
