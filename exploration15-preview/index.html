@@ -3303,7 +3303,10 @@ function scrollCardsToFocus(instant){
     void track.offsetWidth;               // flush, so re-enabling transition below can't retro-animate this jump
     track.style.transition = '';
   };
-  if (!cards.length || !wrap || S.listZone!=='rows'){ apply('none'); return; }
+  // Keep the remembered card visually parked in place while focus is in tabs/header.
+  // Resetting the transform outside the rows zone made the carousel appear to jump back
+  // to card 1 even though S.rowIdx and per-tab focus memory were still correct.
+  if (!cards.length || !wrap){ apply('none'); return; }
   const viewW = wrap.clientWidth;
   const total = track.scrollWidth;
   const card = cards[S.rowIdx];
