@@ -2141,6 +2141,7 @@ const S = {
   accountLoading:false,       // Balance/Account destination skeleton (task §7)
   stack:[],                   // list, detail, confirm, result, pin, account, authorize, sell
   tab:0, tabIdx:0, tabFocusLeft:null, tabFocusWidth:null,
+  tabCardMemory:[{rowIdx:0,marketIdx:0},{rowIdx:0,marketIdx:0},{rowIdx:0,marketIdx:0}],
   listZone:'rows', rowIdx:0,  // header | tabs | rows  ('rows' = the card slider zone, exploration03)
   // exploration03: rowIdx is now the focused Event CARD's index (Left/Right moves it);
   // marketIdx is the focused Market row's index *within* that card (Up/Down moves it).
@@ -2268,6 +2269,18 @@ const skelPill  = (w,h)=>`<div class="skel skel-pill" style="width:${w};height:$
 function visibleEvents(){
   const t = TABS[S.tab].id;
   return EVENTS.filter(e=>e.tab===t);
+}
+function rememberTabCardFocus(){
+  if (!S.tabCardMemory[S.tab]) S.tabCardMemory[S.tab]={rowIdx:0,marketIdx:0};
+  S.tabCardMemory[S.tab]={rowIdx:S.rowIdx,marketIdx:S.marketIdx};
+}
+function restoreTabCardFocus(){
+  const evs=visibleEvents();
+  const mem=S.tabCardMemory[S.tab] || {rowIdx:0,marketIdx:0};
+  S.rowIdx=Math.max(0,Math.min(mem.rowIdx,Math.max(0,evs.length-1)));
+  const ev=evs[S.rowIdx];
+  const marketCount=ev ? ev.markets.length : 0;
+  S.marketIdx=Math.max(0,Math.min(mem.marketIdx,Math.max(0,marketCount-1)));
 }
 function chipHTML(m, sm){
   const c = sm?'chip sm':'chip';
@@ -3329,6 +3342,7 @@ function moveCardFocus(newCardIdx){
   }
   S.rowIdx = newCardIdx;
   S.marketIdx = 0; // each newly-focused card opens on its first/top Market row
+  rememberTabCardFocus();
   const newCard = cards[newCardIdx];
   if (newCard){
     newCard.classList.add('active');
@@ -3354,6 +3368,7 @@ function moveMarketRowFocus(newMarketIdx){
   const rows = card.querySelectorAll('.marRow');
   const old = rows[S.marketIdx]; if (old) old.classList.remove('focused');
   S.marketIdx = newMarketIdx;
+  rememberTabCardFocus();
   const neu = rows[newMarketIdx]; if (neu) neu.classList.add('focused');
   scrollMarketsToFocus(); // E05: keep the newly-focused row's own top edge in view (no-op pre-E05, see Task 7)
 }
@@ -5276,7 +5291,7 @@ function openPanel(){
   clearTimeout(S.entryTimer);
   S.mode='panel';
   S.stack=['list'];
-  S.tab=0; S.tabIdx=0; S.listZone='rows'; S.rowIdx=0; S.marketIdx=0; S.headerFocus='balance'; S.hdrActive=false;
+  S.tab=0; S.tabIdx=0; S.listZone='rows'; S.rowIdx=0; S.marketIdx=0; S.tabCardMemory=[{rowIdx:0,marketIdx:0},{rowIdx:0,marketIdx:0},{rowIdx:0,marketIdx:0}]; S.headerFocus='balance'; S.hdrActive=false;
   S.cardTrade=null; // E05: defensive — a fresh panel open always starts fully collapsed
   document.getElementById('scaler').classList.add('panel-open');
   if (S.shellBooted){ S.listState='ready'; S._anim='in'; render(); }
@@ -5531,15 +5546,15 @@ function listKey(ok,back,dir){
     return;
   }
   if (S.listZone==='tabs'){
-    if (dir==='left'){ if(S.tabIdx>0){S.tabIdx--; S.tab=S.tabIdx; S.rowIdx=0; S.marketIdx=0; S._tabSlide=true; S._tabFocusSlide=true; S._tabContentSwap='prev'; render();} else bounce('#tabs','x'); }
-    else if (dir==='right'){ if(S.tabIdx<TABS.length-1){S.tabIdx++; S.tab=S.tabIdx; S.rowIdx=0; S.marketIdx=0; S._tabSlide=true; S._tabFocusSlide=true; S._tabContentSwap='next'; render();} else bounce('#tabs','x'); }
+    if (dir==='left'){ if(S.tabIdx>0){rememberTabCardFocus(); S.tabIdx--; S.tab=S.tabIdx; restoreTabCardFocus(); S._tabSlide=true; S._tabFocusSlide=true; S._tabContentSwap='prev'; render();} else bounce('#tabs','x'); }
+    else if (dir==='right'){ if(S.tabIdx<TABS.length-1){rememberTabCardFocus(); S.tabIdx++; S.tab=S.tabIdx; restoreTabCardFocus(); S._tabSlide=true; S._tabFocusSlide=true; S._tabContentSwap='next'; render();} else bounce('#tabs','x'); }
     else if (dir==='up'){
       S.listZone='header';
       if (!headerOrder().includes(S.headerFocus)) S.headerFocus='balance';
       render();
     }
-    else if (dir==='down'){ S.listZone='rows'; S.rowIdx=0; S.marketIdx=0; S._cardFocusMotion='in'; render(); }
-    else if (ok){ S.listZone='rows'; S.rowIdx=0; S.marketIdx=0; S._cardFocusMotion='in'; render(); }
+    else if (dir==='down'){ S.listZone='rows'; restoreTabCardFocus(); S._cardFocusMotion='in'; render(); }
+    else if (ok){ S.listZone='rows'; restoreTabCardFocus(); S._cardFocusMotion='in'; render(); }
     return;
   }
   // cards zone (exploration03) — Left/Right moves the focused Event card (S.rowIdx);
@@ -5567,7 +5582,7 @@ function listKey(ok,back,dir){
   }
   else if (dir==='up'){
     if (S.marketIdx>0){ moveMarketRowFocus(S.marketIdx-1); }
-    else { S.listZone='tabs'; S.tabIdx=S.tab; S._cardFocusMotion='out'; render(); }
+    else { rememberTabCardFocus(); S.listZone='tabs'; S.tabIdx=S.tab; S._cardFocusMotion='out'; render(); }
   }
   else if (dir==='down'){
     if (S.marketIdx<marketCount-1){ moveMarketRowFocus(S.marketIdx+1); }
@@ -6285,7 +6300,7 @@ function accountKey(ok,back,dir){
     if (!S.signoutArmed) return;                                // same arming guard as a trade
     S.auth='anon'; S.pinUnlocked=false;
     S.tradingUnlockMode=null; S.tradingUnlockExpiresAt=null; S.tradingUnlockDurationMs=null;
-    S.stack=['list']; S.listZone='rows'; S.rowIdx=0; S.marketIdx=0; S.tab=0; S.tabIdx=0; S.headerFocus='balance';
+    S.stack=['list']; S.listZone='rows'; S.rowIdx=0; S.marketIdx=0; S.tab=0; S.tabIdx=0; S.tabCardMemory=[{rowIdx:0,marketIdx:0},{rowIdx:0,marketIdx:0},{rowIdx:0,marketIdx:0}]; S.headerFocus='balance';
     render(true);
   }
 }
