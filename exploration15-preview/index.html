@@ -2259,6 +2259,7 @@ const SKEL_MS = 900; // short but clearly perceivable (task's own framing) — l
 // feels responsive. One constant, reused for every destination's simulated delay — the
 // initial app shell, Market/Event navigation, an expanded Market, Positions, Balance
 // (Account) and Trading Lock (Gate) all wait exactly this long, never a per-screen number.
+const TAB_SKEL_MS = 450; // Discovery dataset changes: visible but lighter than initial boot.
 const skelLine  = (w,h)=>`<div class="skel skel-line" style="width:${w};${h?`height:${h};`:''}"></div>`;
 const skelBlock = (w,h,r)=>`<div class="skel skel-block" style="width:${w};height:${h};${r?`border-radius:${r};`:''}"></div>`;
 const skelPill  = (w,h)=>`<div class="skel skel-pill" style="width:${w};height:${h};"></div>`;
@@ -3200,7 +3201,7 @@ function renderList(back){
   positionTabFocusSlider(Boolean(S._tabFocusSlide));
   S._tabSlide = false;
   S._tabFocusSlide = false;
-  S._tabContentSwap = null;
+  if (S.listState==='ready') S._tabContentSwap = null;
   // Horizontal-drift fix: this innerHTML rebuild just replaced #cardTrack itself with a brand
   // new element, so there is no meaningful "previous frame" for a CSS transition to slide from
   // — instant:true snaps it straight back to the already-correct position instead of letting
@@ -5318,6 +5319,20 @@ function startLoading(){
     render();
   }, SKEL_MS);
 }
+// Discovery destination changes replace the entire market dataset, so they briefly show
+// the shared card skeleton while keeping the real header and tab row visible. This is
+// intentionally shorter than the initial shell load and is never used for ordinary focus
+// movement within one destination.
+function startTabLoading(){
+  clearTimeout(S.tabLoadTimer);
+  S.listState='loading';
+  render();
+  S.tabLoadTimer=setTimeout(()=>{
+    S.listState='ready';
+    S._contentJustLoaded=true;
+    render();
+  }, TAB_SKEL_MS);
+}
 function closePanel(){
   S.stack=[];
   S.mode='entry';
@@ -5549,8 +5564,8 @@ function listKey(ok,back,dir){
     return;
   }
   if (S.listZone==='tabs'){
-    if (dir==='left'){ if(S.tabIdx>0){rememberTabCardFocus(); S.tabIdx--; S.tab=S.tabIdx; restoreTabCardFocus(); S._tabSlide=true; S._tabFocusSlide=true; S._tabContentSwap='prev'; render();} else bounce('#tabs','x'); }
-    else if (dir==='right'){ if(S.tabIdx<TABS.length-1){rememberTabCardFocus(); S.tabIdx++; S.tab=S.tabIdx; restoreTabCardFocus(); S._tabSlide=true; S._tabFocusSlide=true; S._tabContentSwap='next'; render();} else bounce('#tabs','x'); }
+    if (dir==='left'){ if(S.tabIdx>0){rememberTabCardFocus(); S.tabIdx--; S.tab=S.tabIdx; restoreTabCardFocus(); S._tabSlide=true; S._tabFocusSlide=true; S._tabContentSwap='prev'; startTabLoading();} else bounce('#tabs','x'); }
+    else if (dir==='right'){ if(S.tabIdx<TABS.length-1){rememberTabCardFocus(); S.tabIdx++; S.tab=S.tabIdx; restoreTabCardFocus(); S._tabSlide=true; S._tabFocusSlide=true; S._tabContentSwap='next'; startTabLoading();} else bounce('#tabs','x'); }
     else if (dir==='up'){
       S.listZone='header';
       if (!headerOrder().includes(S.headerFocus)) S.headerFocus='balance';
