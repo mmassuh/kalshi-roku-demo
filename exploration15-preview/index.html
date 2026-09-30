@@ -1269,7 +1269,6 @@ html,body{height:100%;background:#000;overflow:hidden;font-family:var(--font-bod
 @keyframes bounceX{0%{transform:translateX(0);}40%{transform:translateX(4px);}100%{transform:translateX(0);}}
 .bounceY{animation:bounceY 150ms ease-out;}
 @keyframes bounceY{0%{transform:translateY(0);}40%{transform:translateY(4px);}100%{transform:translateY(0);}}
-.focusTravelTarget{outline-color:transparent!important;}
 .spinner{width:32px;height:32px;border-radius:50%;border:3px solid rgba(255,255,255,.35);border-top-color:var(--on-fill);animation:spin .8s linear infinite;}
 @keyframes spin{to{transform:rotate(360deg);}}
 
@@ -5412,41 +5411,6 @@ function bounce(sel, axis){
   el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls);
 }
 
-// Fast vertical focus travel: the real destination ring is hidden for 120 ms while a
-// lightweight fixed overlay moves from the previous focused control to the next one.
-// It works across full render() replacements because the source geometry is captured
-// before dispatch and the destination is measured on the next animation frame.
-function focusSnapshot(){
-  const el=Array.from(document.querySelectorAll('#scaler .focused')).find(node=>{
-    const r=node.getBoundingClientRect(); return r.width>0 && r.height>0;
-  });
-  if (!el) return null;
-  const r=el.getBoundingClientRect();
-  return {el,left:r.left,top:r.top,width:r.width,height:r.height,radius:parseFloat(getComputedStyle(el).borderRadius)||0};
-}
-function animateVerticalFocus(from){
-  if (!from || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-  const to=focusSnapshot();
-  if (!to || to.el===from.el) return;
-  const moved=Math.abs(to.top-from.top)>2 || Math.abs(to.left-from.left)>2;
-  if (!moved) return;
-  document.getElementById('focusTraveler')?.remove();
-  const scaler=$('#scaler');
-  const scale=scaler ? scaler.getBoundingClientRect().width/1920 : 1;
-  const gap=3*scale, stroke=Math.max(2,4*scale);
-  const box=(p)=>({left:p.left-gap,top:p.top-gap,width:p.width+gap*2,height:p.height+gap*2,radius:(p.radius+3)*scale});
-  const a=box(from), b=box(to);
-  const fly=document.createElement('div');
-  fly.id='focusTraveler';
-  Object.assign(fly.style,{position:'fixed',pointerEvents:'none',zIndex:'99999',boxSizing:'border-box',border:`${stroke}px solid ${getComputedStyle(document.documentElement).getPropertyValue('--focus-ring').trim()}`,left:`${a.left}px`,top:`${a.top}px`,width:`${a.width}px`,height:`${a.height}px`,borderRadius:`${a.radius}px`,transition:'left 120ms cubic-bezier(.2,0,0,1),top 120ms cubic-bezier(.2,0,0,1),width 120ms cubic-bezier(.2,0,0,1),height 120ms cubic-bezier(.2,0,0,1),border-radius 120ms cubic-bezier(.2,0,0,1),opacity 60ms ease-out'});
-  to.el.classList.add('focusTravelTarget');
-  document.body.appendChild(fly);
-  void fly.offsetWidth;
-  Object.assign(fly.style,{left:`${b.left}px`,top:`${b.top}px`,width:`${b.width}px`,height:`${b.height}px`,borderRadius:`${b.radius}px`});
-  setTimeout(()=>{ fly.style.opacity='0'; },105);
-  setTimeout(()=>{ fly.remove(); if(to.el.isConnected) to.el.classList.remove('focusTravelTarget'); },135);
-}
-
 window.addEventListener('keydown', e=>{
   // normalize: some environments deliver key:"" — fall back to e.code / keyCode
   let k=e.key;
@@ -5503,8 +5467,6 @@ window.addEventListener('keydown', e=>{
   const back = k==='Escape'||k==='Backspace';
   const dir = {ArrowUp:'up',ArrowDown:'down',ArrowLeft:'left',ArrowRight:'right'}[k];
   if (!ok && !back && !dir) return;
-  const verticalFocusFrom = (dir==='up'||dir==='down') ? focusSnapshot() : null;
-  if (verticalFocusFrom) requestAnimationFrame(()=>animateVerticalFocus(verticalFocusFrom));
 
   // sign-in takeover captures all input while open
   if (document.getElementById('scaler').classList.contains('auth-open')){ authKey(ok, back, dir); return; }
