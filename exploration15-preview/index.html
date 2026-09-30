@@ -1061,11 +1061,11 @@ html,body{height:100%;background:#000;overflow:hidden;font-family:var(--font-bod
 /* Bottom padding trimmed (6px -> 2px), same fill-available-height pass — the card's own
    outer edge below posIndicator, not any of the graph/question/market-row content above
    it. Width/gap/border/radius and every other side are untouched. */
-.evCard{flex:0 0 420px;width:420px;background:var(--surface-card);border:1.5px solid var(--stroke-hair);border-radius:var(--shape-card-lg);padding:26px 26px 2px;display:flex;flex-direction:column;transition:background 150ms,border-color 150ms;}
+.evCard{flex:0 0 420px;width:420px;background:var(--surface-card);border:1.5px solid var(--stroke-hair);border-radius:var(--shape-card-lg);padding:26px 26px 2px;display:flex;flex-direction:column;transform-origin:center;transition:background 150ms,border-color 150ms,transform 220ms cubic-bezier(.2,0,0,1);will-change:transform;}
 /* "you are here" affordance for the whole card — deliberately NOT the focus ring; the
    ring (reused unmodified from .marRow.focused/.mrow.focused) stays on the one real focus
    target, the Market row inside. This is a quieter, lower-emphasis cue only. */
-.evCard.active{background:var(--surface-raised);border-color:var(--stroke-strong);}
+.evCard.active{background:var(--surface-raised);border-color:var(--stroke-strong);transform:translateY(-3px) scale(1.008);z-index:2;}
 /* Event Card probability-over-time graph + total volume (added per user request,
    2026-09-08 -- see EXPLORATION03.md "Card graph + volume"). A NEW component, not a
    redesign of Market Detail's existing single-line dSpark (that graph is untouched).
@@ -1217,6 +1217,8 @@ html,body{height:100%;background:#000;overflow:hidden;font-family:var(--font-bod
   .cardExpandInner.skelTradeReveal{animation:none!important;}
   .screen.animIn,.screen.animBack,.skel::after,.chip.live i{animation:none!important;}
   #tabsTrack{transition:none!important;}
+  .evCard{transition:none!important;}
+  .evCard.active{transform:none;}
   .cardGraph.graphDrawing .cardGraphLine,.cardGraph.graphDrawing .cardGraphDot{transition:none!important;}
 }
 /* Legacy row-shape aliases (Positions/initial-list skeleton rows, pre-existing markup kept
