@@ -1037,7 +1037,7 @@ html,body{height:100%;background:#000;overflow:hidden;font-family:var(--font-bod
    framing around the whole card slider, not "internal card layout" — to give back the
    room the #cardTrack min-height:0 fix (above) now correctly withholds from oversized
    cards. Horizontal padding (40px, aligned with the header/tabs margin) is untouched. */
-#cardWrap{flex:1;position:relative;overflow:hidden;padding:6px 40px 0px;display:flex;flex-direction:column;}
+#cardWrap{flex:1;position:relative;overflow:hidden;padding:20px 40px 0px;display:flex;flex-direction:column;}
 /* min-height:0 is the fix, not decoration: #cardTrack is a flex ITEM of #cardWrap's column
    layout (so its height is that context's main axis) but is ALSO itself a flex CONTAINER
    (row) for the cards. Without min-height:0, the browser's automatic minimum size for a
@@ -1166,6 +1166,7 @@ html,body{height:100%;background:#000;overflow:hidden;font-family:var(--font-bod
 .chip.live i{width:8px;height:8px;border-radius:50%;background:var(--no);animation:pulse 1.5s ease-in-out infinite;}
 .chip.open{background:var(--yes-tint);color:var(--yes);}
 .chip.closing{background:rgba(255,225,77,.16);color:var(--warn);}
+.dEyebrow .chip.closing{height:30px;padding:0 12px;font-size:17px;white-space:nowrap;flex:0 0 auto;}
 .chip.suspended{background:rgba(255,149,0,.16);color:var(--attn);}
 .chip.closed{background:var(--fill-ctl);color:var(--text-2);}
 .chip.sideYes{background:var(--trade-yes-surface);color:var(--trade-yes);}
