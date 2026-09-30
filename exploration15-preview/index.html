@@ -5528,11 +5528,12 @@ function listKey(ok,back,dir){
   const marketCount = curEv.markets.length;
   if (dir==='left'){
     if (S.rowIdx>0){ moveCardFocus(S.rowIdx-1); }
-    else bounce('.evCard.active','x');
+    // The focused card already owns a scale/lift transform. A boundary bounce would
+    // temporarily replace that transform and make the first card visibly jump.
   }
   else if (dir==='right'){
     if (S.rowIdx<rowCount-1){ moveCardFocus(S.rowIdx+1); }
-    else bounce('.evCard.active','x');
+    // Keep the last card firmly in place for the same reason as the first-card edge.
   }
   else if (dir==='up'){
     if (S.marketIdx>0){ moveMarketRowFocus(S.marketIdx-1); }
