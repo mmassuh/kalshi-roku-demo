@@ -747,12 +747,17 @@ html,body{height:100%;background:#000;overflow:hidden;font-family:var(--font-bod
 @keyframes slideBack{from{transform:translateX(-48px);opacity:0;}to{transform:none;opacity:1;}}
 
 /* ---------- Tabs ---------- */
-#tabs{flex:0 0 104px;display:block;overflow:hidden;padding:18px 40px 0;box-sizing:border-box;}
-#tabsTrack{display:flex;align-items:flex-start;gap:12px;width:max-content;padding-right:12px;transform:translateX(0);transition:transform 220ms cubic-bezier(.2,0,0,1);}
+#tabs{flex:0 0 104px;display:block;overflow:hidden;padding:18px 40px 0;box-sizing:border-box;position:relative;}
+#tabFocusSlider{position:absolute;top:18px;left:40px;height:56px;border-radius:var(--shape-tab);background:var(--fill-ctl);outline:4px solid var(--focus-ring);outline-offset:3px;opacity:0;pointer-events:none;z-index:0;transition:left 220ms cubic-bezier(.2,0,0,1),width 220ms cubic-bezier(.2,0,0,1),opacity 120ms ease-out;}
+#tabsTrack{position:relative;z-index:1;display:flex;align-items:flex-start;gap:12px;width:max-content;padding-right:12px;transform:translateX(0);transition:transform 220ms cubic-bezier(.2,0,0,1);}
 .tab{height:56px;display:flex;align-items:center;padding:0 24px;border-radius:var(--shape-tab);font:var(--weight-medium) 24px/1 var(--font-body);color:var(--text-2);white-space:nowrap;transition:background .15s,color .15s,transform .15s;}
 .tab.active{background:var(--fill-ctl);color:var(--text-1);}
-.tab.focused{outline:4px solid var(--focus-ring);outline-offset:3px;background:var(--surface-raised);color:var(--text-1);transform:scale(1.035);}
-.tab.active.focused{background:var(--fill-ctl);}
+.tab.focused{color:var(--text-1);}
+.tab.active.focused{background:transparent;}
+.tabContentInNext{animation:tabContentInNext 180ms cubic-bezier(.16,1,.3,1);}
+.tabContentInPrev{animation:tabContentInPrev 180ms cubic-bezier(.16,1,.3,1);}
+@keyframes tabContentInNext{from{opacity:.72;transform:translateX(14px);}to{opacity:1;transform:none;}}
+@keyframes tabContentInPrev{from{opacity:.72;transform:translateX(-14px);}to{opacity:1;transform:none;}}
 
 /* ---------- Market list ---------- */
 /* 10px top/bottom so the focus ring of the first and last rows is not clipped:
@@ -1216,6 +1221,8 @@ html,body{height:100%;background:#000;overflow:hidden;font-family:var(--font-bod
   .cardExpandInner.skelTradeReveal{animation:none!important;}
   .screen.animIn,.screen.animBack,.skel::after,.chip.live i{animation:none!important;}
   #tabsTrack{transition:none!important;}
+  #tabFocusSlider{transition:none!important;}
+  .tabContentInNext,.tabContentInPrev{animation:none!important;}
   .evCard{transition:none!important;}
   .evCard.active{transform:none;}
   .cardGraph.graphDrawing .cardGraphLine,.cardGraph.graphDrawing .cardGraphDot{transition:none!important;}
@@ -2127,7 +2134,7 @@ const S = {
   positionsLoading:false,     // Positions destination skeleton (task §6)
   accountLoading:false,       // Balance/Account destination skeleton (task §7)
   stack:[],                   // list, detail, confirm, result, pin, account, authorize, sell
-  tab:0, tabIdx:0,
+  tab:0, tabIdx:0, tabFocusLeft:null, tabFocusWidth:null,
   listZone:'rows', rowIdx:0,  // header | tabs | rows  ('rows' = the card slider zone, exploration03)
   // exploration03: rowIdx is now the focused Event CARD's index (Left/Right moves it);
   // marketIdx is the focused Market row's index *within* that card (Up/Down moves it).
@@ -3096,7 +3103,7 @@ function marketCardSkeletonHTML(rows){
 function renderList(back){
   const body = $('#pBody');
   // One-shot fade (task §16 — content cross-fades in, geometry never animates): set by
-  // startLoading()/startTabLoading() on the single render() call where listState flips
+  // startLoading() on the single render() call where listState flips
   // loading -> ready, consumed here so a later, unrelated re-render of the same real
   // content (a tick, a side select) never replays it.
   const justLoaded = S._contentJustLoaded; S._contentJustLoaded = false;
@@ -3113,7 +3120,7 @@ function renderList(back){
     header.classList.remove('skelFadeIn');
     header.innerHTML = headerSkeletonHTML();
   }
-  const tabsHTML = S.shellBooted ? (`<div id="tabs" class="${shellJustLoaded?'skelFadeIn':''}"><div id="tabsTrack">` + TABS.map((t,i)=>{
+  const tabsHTML = S.shellBooted ? (`<div id="tabs" class="${shellJustLoaded?'skelFadeIn':''}"><div id="tabFocusSlider"></div><div id="tabsTrack">` + TABS.map((t,i)=>{
     const cls = ['tab', i===S.tab?'active':'', (S.listZone==='tabs'&&i===S.tabIdx)?'focused':''].join(' ');
     return `<div class="${cls}" data-i="${i}">${t.label}</div>`;
   }).join('') + `</div></div>`) : tabsSkeletonHTML();
@@ -3121,10 +3128,8 @@ function renderList(back){
   let content;
   if (S.listState==='loading'){
     // Market/Event Skeleton (task §3/§4) — same MarketCardSkeleton composition whether this
-    // is the very first Initial App Shell load or a later tab switch (startTabLoading); the
-    // only difference between those two moments is whether Header/Nav above are also
-    // skeleton (!S.shellBooted) or already real (task §2) — this content region itself
-    // never has two different loading looks.
+    // is the very first Initial App Shell load or an explicit delayed/retry state. Routine
+    // Discovery tab switches stay ready and replace this region immediately.
     content = `<div id="cardWrap"><div id="cardTrack">${marketCardSkeletonHTML()}${marketCardSkeletonHTML()}</div></div>`;
   }
   else if (S.listState==='error'){
@@ -3159,7 +3164,8 @@ function renderList(back){
       const grpStart = isGameTab && ev.grp==='trending' && i>0 && evs[i-1].grp==='related';
       dotsHTML += `<span class="dot ${grpStart?'grpStart':''} ${i===S.rowIdx?'active':''}"></span>`;
     });
-    content = `<div id="cardWrap">
+    const tabSwapClass = S._tabContentSwap==='next' ? 'tabContentInNext' : (S._tabContentSwap==='prev' ? 'tabContentInPrev' : '');
+    content = `<div id="cardWrap" class="${tabSwapClass}">
         <span class="cardNavHint left ${S.rowIdx>0?'show':''}" id="cardNavL">‹</span>
         <span class="cardNavHint right ${S.rowIdx<total-1?'show':''}" id="cardNavR">›</span>
         <div id="cardTrack">${cardsHTML}</div>
@@ -3169,7 +3175,10 @@ function renderList(back){
 
   body.innerHTML = `<div class="screen ${animCls()}" id="listScreen">${tabsHTML}${content}</div>`;
   scrollTabsToFocus(Boolean(S._tabSlide));
+  positionTabFocusSlider(Boolean(S._tabFocusSlide));
   S._tabSlide = false;
+  S._tabFocusSlide = false;
+  S._tabContentSwap = null;
   // Horizontal-drift fix: this innerHTML rebuild just replaced #cardTrack itself with a brand
   // new element, so there is no meaningful "previous frame" for a CSS transition to slide from
   // — instant:true snaps it straight back to the already-correct position instead of letting
@@ -3371,6 +3380,30 @@ function scrollTabsToFocus(animate){
     requestAnimationFrame(()=>{ if (track.isConnected) track.style.transition=''; });
   }
   S.tabsScrollX = next;
+}
+// A single ring travels between Discovery destinations. renderList rebuilds the tab row
+// with the new content, so the previous screen-space position is retained in state and
+// applied for one frame before the slider moves to the newly focused tab.
+function positionTabFocusSlider(animate){
+  const slider=$('#tabFocusSlider'), track=$('#tabsTrack'), wrap=$('#tabs');
+  if (!slider || !track || !wrap || S.listZone!=='tabs'){ if(slider) slider.style.opacity='0'; return; }
+  const tabs=track.querySelectorAll('.tab');
+  const item=tabs[Math.max(0,Math.min(S.tabIdx,tabs.length-1))];
+  if (!item) return;
+  const nextLeft=40 + item.offsetLeft - (S.tabsScrollX||0);
+  const nextWidth=item.offsetWidth;
+  const hasPrior=Number.isFinite(S.tabFocusLeft) && Number.isFinite(S.tabFocusWidth);
+  slider.style.transition='none';
+  slider.style.left=`${hasPrior ? S.tabFocusLeft : nextLeft}px`;
+  slider.style.width=`${hasPrior ? S.tabFocusWidth : nextWidth}px`;
+  slider.style.opacity='1';
+  void slider.offsetWidth;
+  if (animate && hasPrior) slider.style.transition='';
+  slider.style.left=`${nextLeft}px`;
+  slider.style.width=`${nextWidth}px`;
+  if (!animate || !hasPrior) requestAnimationFrame(()=>{ if(slider.isConnected) slider.style.transition=''; });
+  S.tabFocusLeft=nextLeft;
+  S.tabFocusWidth=nextWidth;
 }
 // Live-tick patch for a Market row inside the card slider — same targeted in-place pattern
 // as updateEventListRow/handleEventListTick (below), just scoped to #cardTrack so it finds
@@ -5258,18 +5291,6 @@ function startLoading(){
     render();
   }, SKEL_MS);
 }
-// "Markets navigation" (task §3) — switching Discovery tabs re-shows the Market/Event
-// skeleton for the CONTENT region only. Unlike startLoading() (the cold-open/app-shell
-// path), the Global Header and the tab bar itself are already real and stay real — only
-// #cardWrap's content re-enters skeleton state, reusing the exact same S.listState/
-// renderList() machinery (task's "same skin, different geometry, reused across
-// destinations"). No progress bar here — that affordance is reserved for the one true
-// app-boot moment; an in-app tab switch is a lighter, more frequent beat.
-function startTabLoading(){
-  S.listState='loading';
-  render();
-  setTimeout(()=>{ S.listState='ready'; S._contentJustLoaded=true; render(); }, SKEL_MS);
-}
 function closePanel(){
   S.stack=[];
   S.mode='entry';
@@ -5501,8 +5522,8 @@ function listKey(ok,back,dir){
     return;
   }
   if (S.listZone==='tabs'){
-    if (dir==='left'){ if(S.tabIdx>0){S.tabIdx--; S.tab=S.tabIdx; S.rowIdx=0; S.marketIdx=0; S._tabSlide=true; startTabLoading();} else bounce('#tabs','x'); }
-    else if (dir==='right'){ if(S.tabIdx<TABS.length-1){S.tabIdx++; S.tab=S.tabIdx; S.rowIdx=0; S.marketIdx=0; S._tabSlide=true; startTabLoading();} else bounce('#tabs','x'); }
+    if (dir==='left'){ if(S.tabIdx>0){S.tabIdx--; S.tab=S.tabIdx; S.rowIdx=0; S.marketIdx=0; S._tabSlide=true; S._tabFocusSlide=true; S._tabContentSwap='prev'; render();} else bounce('#tabs','x'); }
+    else if (dir==='right'){ if(S.tabIdx<TABS.length-1){S.tabIdx++; S.tab=S.tabIdx; S.rowIdx=0; S.marketIdx=0; S._tabSlide=true; S._tabFocusSlide=true; S._tabContentSwap='next'; render();} else bounce('#tabs','x'); }
     else if (dir==='up'){
       S.listZone='header';
       if (!headerOrder().includes(S.headerFocus)) S.headerFocus='balance';
