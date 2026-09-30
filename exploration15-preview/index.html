@@ -1037,7 +1037,7 @@ html,body{height:100%;background:#000;overflow:hidden;font-family:var(--font-bod
    framing around the whole card slider, not "internal card layout" — to give back the
    room the #cardTrack min-height:0 fix (above) now correctly withholds from oversized
    cards. Horizontal padding (40px, aligned with the header/tabs margin) is untouched. */
-#cardWrap{flex:1;position:relative;overflow:hidden;padding:20px 40px 0px;display:flex;flex-direction:column;}
+#cardWrap{flex:1;position:relative;overflow:hidden;padding:20px 40px 16px;display:flex;flex-direction:column;}
 /* min-height:0 is the fix, not decoration: #cardTrack is a flex ITEM of #cardWrap's column
    layout (so its height is that context's main axis) but is ALSO itself a flex CONTAINER
    (row) for the cards. Without min-height:0, the browser's automatic minimum size for a
