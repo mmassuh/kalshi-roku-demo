@@ -5333,6 +5333,18 @@ function startTabLoading(){
     render();
   }, TAB_SKEL_MS);
 }
+function changeDiscoveryTab(delta){
+  const next=S.tabIdx+delta;
+  if (next<0 || next>=TABS.length){ bounce('#tabs','x'); return; }
+  rememberTabCardFocus();
+  S.tabIdx=next;
+  S.tab=next;
+  restoreTabCardFocus();
+  S._tabSlide=true;
+  S._tabFocusSlide=true;
+  S._tabContentSwap=delta<0?'prev':'next';
+  startTabLoading();
+}
 function closePanel(){
   S.stack=[];
   S.mode='entry';
@@ -5551,7 +5563,14 @@ window.addEventListener('keydown', e=>{
 function listKey(ok,back,dir){
   if (back){ closePanel(); return; }
   if (S.listState==='error'){ if(ok) startLoading(); return; }
-  if (S.listState==='loading') return;
+  if (S.listState==='loading'){
+    // While a Discovery dataset is loading, rapid Left/Right input may immediately choose
+    // another tab. startTabLoading cancels the stale timer and restarts the same skeleton;
+    // no other content action is allowed until real cards are ready.
+    if (S.listZone==='tabs' && dir==='left') changeDiscoveryTab(-1);
+    else if (S.listZone==='tabs' && dir==='right') changeDiscoveryTab(1);
+    return;
+  }
 
   const rowCount = visibleEvents().length; // exploration03: rowCount = card count
 
@@ -5564,8 +5583,8 @@ function listKey(ok,back,dir){
     return;
   }
   if (S.listZone==='tabs'){
-    if (dir==='left'){ if(S.tabIdx>0){rememberTabCardFocus(); S.tabIdx--; S.tab=S.tabIdx; restoreTabCardFocus(); S._tabSlide=true; S._tabFocusSlide=true; S._tabContentSwap='prev'; startTabLoading();} else bounce('#tabs','x'); }
-    else if (dir==='right'){ if(S.tabIdx<TABS.length-1){rememberTabCardFocus(); S.tabIdx++; S.tab=S.tabIdx; restoreTabCardFocus(); S._tabSlide=true; S._tabFocusSlide=true; S._tabContentSwap='next'; startTabLoading();} else bounce('#tabs','x'); }
+    if (dir==='left') changeDiscoveryTab(-1);
+    else if (dir==='right') changeDiscoveryTab(1);
     else if (dir==='up'){
       S.listZone='header';
       if (!headerOrder().includes(S.headerFocus)) S.headerFocus='balance';
