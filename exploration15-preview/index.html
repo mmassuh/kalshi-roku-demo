@@ -5333,16 +5333,27 @@ function startTabLoading(){
     render();
   }, TAB_SKEL_MS);
 }
-function changeDiscoveryTab(delta){
+function moveDiscoveryTabFocus(delta){
   const next=S.tabIdx+delta;
   if (next<0 || next>=TABS.length){ bounce('#tabs','x'); return; }
-  rememberTabCardFocus();
   S.tabIdx=next;
-  S.tab=next;
-  restoreTabCardFocus();
   S._tabSlide=true;
   S._tabFocusSlide=true;
-  S._tabContentSwap=delta<0?'prev':'next';
+  render();
+}
+function activateDiscoveryTab(){
+  if (S.tabIdx===S.tab){
+    S.listZone='rows';
+    restoreTabCardFocus();
+    S._cardFocusMotion='in';
+    render();
+    return;
+  }
+  const prior=S.tab;
+  rememberTabCardFocus();
+  S.tab=S.tabIdx;
+  restoreTabCardFocus();
+  S._tabContentSwap=S.tab<prior?'prev':'next';
   startTabLoading();
 }
 function closePanel(){
@@ -5564,11 +5575,8 @@ function listKey(ok,back,dir){
   if (back){ closePanel(); return; }
   if (S.listState==='error'){ if(ok) startLoading(); return; }
   if (S.listState==='loading'){
-    // While a Discovery dataset is loading, rapid Left/Right input may immediately choose
-    // another tab. startTabLoading cancels the stale timer and restarts the same skeleton;
-    // no other content action is allowed until real cards are ready.
-    if (S.listZone==='tabs' && dir==='left') changeDiscoveryTab(-1);
-    else if (S.listZone==='tabs' && dir==='right') changeDiscoveryTab(1);
+    // A confirmed dataset change owns the short loading beat. Market-dependent actions
+    // remain unavailable until the selected category is ready.
     return;
   }
 
@@ -5583,15 +5591,15 @@ function listKey(ok,back,dir){
     return;
   }
   if (S.listZone==='tabs'){
-    if (dir==='left') changeDiscoveryTab(-1);
-    else if (dir==='right') changeDiscoveryTab(1);
+    if (dir==='left') moveDiscoveryTabFocus(-1);
+    else if (dir==='right') moveDiscoveryTabFocus(1);
     else if (dir==='up'){
       S.listZone='header';
       if (!headerOrder().includes(S.headerFocus)) S.headerFocus='balance';
       render();
     }
-    else if (dir==='down'){ S.listZone='rows'; restoreTabCardFocus(); S._cardFocusMotion='in'; render(); }
-    else if (ok){ S.listZone='rows'; restoreTabCardFocus(); S._cardFocusMotion='in'; render(); }
+    else if (dir==='down'){ S.tabIdx=S.tab; S.listZone='rows'; restoreTabCardFocus(); S._cardFocusMotion='in'; render(); }
+    else if (ok) activateDiscoveryTab();
     return;
   }
   // cards zone (exploration03) — Left/Right moves the focused Event card (S.rowIdx);
