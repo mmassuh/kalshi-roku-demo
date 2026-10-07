@@ -681,9 +681,9 @@ html,body{height:100%;background:#000;overflow:hidden;font-family:var(--font-bod
    actual cause (a missing `min-height:0` on #cardTrack, see its own comment below) has
    since been fixed directly, so #cardWrap/.evCard now genuinely fill whatever height this
    header leaves them, at any header height, with no hardcoded budget between them. */
-#pHeader{flex:0 0 148px;display:flex;flex-direction:column;justify-content:center;gap:10px;padding:12px 32px 14px;border-bottom:1.5px solid var(--stroke-hair);}
+#pHeader{flex:0 0 92px;display:flex;flex-direction:column;justify-content:center;padding:16px 32px;border-bottom:1.5px solid var(--stroke-hair);}
 #pHeader .hdrRow{display:flex;align-items:center;width:100%;}
-#pHeader .hdrRow1{height:46px;justify-content:space-between;}
+#pHeader .hdrRow1{height:60px;justify-content:flex-start;}
 #pHeader .hdrRow2{height:64px;gap:20px;justify-content:space-between;}
 #pHeader .hdrRow2>.authStatus,
 #pHeader .hdrRow2>.hdrRightGroup>.authStatus,
@@ -1385,6 +1385,24 @@ html,body{height:100%;background:#000;overflow:hidden;font-family:var(--font-bod
 
 .ctaWrap{margin-top:24px;}
 .dMeta{margin-top:20px;font:var(--weight-regular) 20px/26px var(--font-body);color:var(--text-3);display:flex;gap:16px;}
+
+/* ============================================================
+   KALSHI HANDOFF — shown only after the user chooses to trade for real.
+   The QR is progressive disclosure rather than persistent market chrome: it gets the
+   full panel width when needed and never competes with the chart, outcome or amount.
+   ============================================================ */
+#handoff{padding:32px 40px 40px;overflow:hidden;align-items:stretch;}
+.handoffBody{display:flex;flex:1;min-height:0;flex-direction:column;align-items:center;text-align:center;}
+.handoffEyebrow{margin-top:18px;font:var(--weight-medium) 16px/20px var(--font-body);letter-spacing:var(--tracking-label);text-transform:uppercase;color:var(--brand);}
+.handoffTitle{margin-top:8px;font:var(--weight-medium) 34px/40px var(--font-display);letter-spacing:var(--tracking-display);color:var(--text-1);}
+.handoffCopy{margin-top:10px;max-width:440px;font:var(--weight-regular) 18px/25px var(--font-body);color:var(--text-2);}
+.handoffQR{margin-top:18px;padding:16px;border-radius:var(--radius-lg);background:#fff;line-height:0;}
+.handoffQR svg{display:block;width:280px;height:280px;}
+.handoffMarket{margin-top:18px;width:100%;box-sizing:border-box;padding:16px 18px;border:1.5px solid var(--stroke-hair);border-radius:var(--shape-card);background:var(--surface-card);text-align:left;}
+.handoffMarket .question{font:var(--weight-medium) 20px/26px var(--font-body);color:var(--text-1);}
+.handoffMarket .selection{margin-top:6px;font:var(--weight-regular) 17px/23px var(--font-body);color:var(--text-2);font-variant-numeric:tabular-nums;}
+.handoffUrl{margin-top:14px;font:var(--weight-medium) 18px/24px var(--font-body);color:var(--text-1);}
+.handoffNote{margin-top:6px;font:var(--weight-regular) 15px/20px var(--font-body);color:var(--text-3);}
 
 /* ============================================================
    CONFIRM / SUCCESS overlays
@@ -2214,6 +2232,7 @@ const S = {
   accountTab:0, accountZone:'tabs',
   listState:'ready',          // loading | ready | error
   detail:null,                // {mId, side, amtIdx, focus, banner, bannerTimed, addMode}
+  handoff:null,               // {mId, side, amount} — selected TV intent continued on Kalshi
   // E05 — in-place expanded Market inside the Discovery card slider (see "EXPANDED MARKET
   // (E05)" below). null = nothing expanded. {marketId, side, amtIdx, focus, banner,
   // bannerTimed} otherwise — same shape/semantics as S.detail's Quick Order fields, kept
@@ -2268,6 +2287,8 @@ const TRADING_PIN_CODE = '3333';
 const AUTH_URL  = "mmassuh.github.io/kalshi-roku-demo/phone.html";
 const AUTH_CODE = "K7QM-3XVP";
 const QR_SVG = '<svg viewBox="0 0 45 45" width="560" height="560" shape-rendering="crispEdges" xmlns="http://www.w3.org/2000/svg"><rect width="45" height="45" fill="#FFFFFF"/><g fill="#000000"><rect x="4" y="4" width="7" height="1"/><rect x="12" y="4" width="6" height="1"/><rect x="19" y="4" width="2" height="1"/><rect x="22" y="4" width="1" height="1"/><rect x="24" y="4" width="1" height="1"/><rect x="26" y="4" width="1" height="1"/><rect x="28" y="4" width="5" height="1"/><rect x="34" y="4" width="7" height="1"/><rect x="4" y="5" width="1" height="1"/><rect x="10" y="5" width="1" height="1"/><rect x="12" y="5" width="3" height="1"/><rect x="19" y="5" width="2" height="1"/><rect x="23" y="5" width="7" height="1"/><rect x="32" y="5" width="1" height="1"/><rect x="34" y="5" width="1" height="1"/><rect x="40" y="5" width="1" height="1"/><rect x="4" y="6" width="1" height="1"/><rect x="6" y="6" width="3" height="1"/><rect x="10" y="6" width="1" height="1"/><rect x="14" y="6" width="2" height="1"/><rect x="19" y="6" width="1" height="1"/><rect x="24" y="6" width="1" height="1"/><rect x="29" y="6" width="1" height="1"/><rect x="31" y="6" width="1" height="1"/><rect x="34" y="6" width="1" height="1"/><rect x="36" y="6" width="3" height="1"/><rect x="40" y="6" width="1" height="1"/><rect x="4" y="7" width="1" height="1"/><rect x="6" y="7" width="3" height="1"/><rect x="10" y="7" width="1" height="1"/><rect x="12" y="7" width="2" height="1"/><rect x="15" y="7" width="5" height="1"/><rect x="21" y="7" width="1" height="1"/><rect x="23" y="7" width="2" height="1"/><rect x="28" y="7" width="4" height="1"/><rect x="34" y="7" width="1" height="1"/><rect x="36" y="7" width="3" height="1"/><rect x="40" y="7" width="1" height="1"/><rect x="4" y="8" width="1" height="1"/><rect x="6" y="8" width="3" height="1"/><rect x="10" y="8" width="1" height="1"/><rect x="14" y="8" width="4" height="1"/><rect x="19" y="8" width="3" height="1"/><rect x="23" y="8" width="1" height="1"/><rect x="25" y="8" width="1" height="1"/><rect x="28" y="8" width="1" height="1"/><rect x="30" y="8" width="2" height="1"/><rect x="34" y="8" width="1" height="1"/><rect x="36" y="8" width="3" height="1"/><rect x="40" y="8" width="1" height="1"/><rect x="4" y="9" width="1" height="1"/><rect x="10" y="9" width="1" height="1"/><rect x="15" y="9" width="1" height="1"/><rect x="18" y="9" width="1" height="1"/><rect x="20" y="9" width="1" height="1"/><rect x="23" y="9" width="3" height="1"/><rect x="28" y="9" width="2" height="1"/><rect x="32" y="9" width="1" height="1"/><rect x="34" y="9" width="1" height="1"/><rect x="40" y="9" width="1" height="1"/><rect x="4" y="10" width="7" height="1"/><rect x="12" y="10" width="1" height="1"/><rect x="14" y="10" width="1" height="1"/><rect x="16" y="10" width="1" height="1"/><rect x="18" y="10" width="1" height="1"/><rect x="20" y="10" width="1" height="1"/><rect x="22" y="10" width="1" height="1"/><rect x="24" y="10" width="1" height="1"/><rect x="26" y="10" width="1" height="1"/><rect x="28" y="10" width="1" height="1"/><rect x="30" y="10" width="1" height="1"/><rect x="32" y="10" width="1" height="1"/><rect x="34" y="10" width="7" height="1"/><rect x="12" y="11" width="1" height="1"/><rect x="14" y="11" width="2" height="1"/><rect x="18" y="11" width="2" height="1"/><rect x="21" y="11" width="2" height="1"/><rect x="25" y="11" width="1" height="1"/><rect x="27" y="11" width="1" height="1"/><rect x="4" y="12" width="1" height="1"/><rect x="6" y="12" width="2" height="1"/><rect x="9" y="12" width="3" height="1"/><rect x="13" y="12" width="3" height="1"/><rect x="18" y="12" width="1" height="1"/><rect x="20" y="12" width="1" height="1"/><rect x="24" y="12" width="1" height="1"/><rect x="27" y="12" width="1" height="1"/><rect x="29" y="12" width="3" height="1"/><rect x="34" y="12" width="1" height="1"/><rect x="37" y="12" width="1" height="1"/><rect x="39" y="12" width="2" height="1"/><rect x="4" y="13" width="4" height="1"/><rect x="9" y="13" width="1" height="1"/><rect x="13" y="13" width="2" height="1"/><rect x="17" y="13" width="1" height="1"/><rect x="19" y="13" width="3" height="1"/><rect x="35" y="13" width="1" height="1"/><rect x="37" y="13" width="3" height="1"/><rect x="10" y="14" width="2" height="1"/><rect x="14" y="14" width="4" height="1"/><rect x="19" y="14" width="1" height="1"/><rect x="22" y="14" width="1" height="1"/><rect x="25" y="14" width="2" height="1"/><rect x="29" y="14" width="1" height="1"/><rect x="32" y="14" width="1" height="1"/><rect x="34" y="14" width="1" height="1"/><rect x="36" y="14" width="1" height="1"/><rect x="5" y="15" width="2" height="1"/><rect x="8" y="15" width="1" height="1"/><rect x="12" y="15" width="2" height="1"/><rect x="15" y="15" width="2" height="1"/><rect x="18" y="15" width="2" height="1"/><rect x="22" y="15" width="2" height="1"/><rect x="27" y="15" width="7" height="1"/><rect x="37" y="15" width="2" height="1"/><rect x="4" y="16" width="2" height="1"/><rect x="10" y="16" width="1" height="1"/><rect x="12" y="16" width="2" height="1"/><rect x="15" y="16" width="2" height="1"/><rect x="18" y="16" width="1" height="1"/><rect x="21" y="16" width="1" height="1"/><rect x="26" y="16" width="5" height="1"/><rect x="33" y="16" width="2" height="1"/><rect x="36" y="16" width="5" height="1"/><rect x="5" y="17" width="1" height="1"/><rect x="8" y="17" width="2" height="1"/><rect x="11" y="17" width="1" height="1"/><rect x="13" y="17" width="2" height="1"/><rect x="17" y="17" width="4" height="1"/><rect x="23" y="17" width="2" height="1"/><rect x="28" y="17" width="10" height="1"/><rect x="39" y="17" width="2" height="1"/><rect x="5" y="18" width="1" height="1"/><rect x="7" y="18" width="1" height="1"/><rect x="9" y="18" width="4" height="1"/><rect x="14" y="18" width="1" height="1"/><rect x="18" y="18" width="1" height="1"/><rect x="21" y="18" width="4" height="1"/><rect x="26" y="18" width="1" height="1"/><rect x="29" y="18" width="2" height="1"/><rect x="33" y="18" width="2" height="1"/><rect x="36" y="18" width="1" height="1"/><rect x="38" y="18" width="2" height="1"/><rect x="5" y="19" width="1" height="1"/><rect x="13" y="19" width="1" height="1"/><rect x="15" y="19" width="1" height="1"/><rect x="17" y="19" width="6" height="1"/><rect x="25" y="19" width="3" height="1"/><rect x="30" y="19" width="7" height="1"/><rect x="40" y="19" width="1" height="1"/><rect x="7" y="20" width="1" height="1"/><rect x="9" y="20" width="2" height="1"/><rect x="12" y="20" width="1" height="1"/><rect x="14" y="20" width="2" height="1"/><rect x="17" y="20" width="8" height="1"/><rect x="29" y="20" width="2" height="1"/><rect x="35" y="20" width="1" height="1"/><rect x="37" y="20" width="3" height="1"/><rect x="4" y="21" width="2" height="1"/><rect x="8" y="21" width="2" height="1"/><rect x="13" y="21" width="2" height="1"/><rect x="16" y="21" width="1" height="1"/><rect x="18" y="21" width="1" height="1"/><rect x="20" y="21" width="2" height="1"/><rect x="23" y="21" width="3" height="1"/><rect x="34" y="21" width="1" height="1"/><rect x="37" y="21" width="1" height="1"/><rect x="39" y="21" width="2" height="1"/><rect x="4" y="22" width="4" height="1"/><rect x="10" y="22" width="1" height="1"/><rect x="14" y="22" width="2" height="1"/><rect x="17" y="22" width="7" height="1"/><rect x="28" y="22" width="1" height="1"/><rect x="31" y="22" width="3" height="1"/><rect x="38" y="22" width="3" height="1"/><rect x="5" y="23" width="4" height="1"/><rect x="13" y="23" width="2" height="1"/><rect x="21" y="23" width="3" height="1"/><rect x="26" y="23" width="2" height="1"/><rect x="32" y="23" width="1" height="1"/><rect x="37" y="23" width="1" height="1"/><rect x="39" y="23" width="1" height="1"/><rect x="4" y="24" width="1" height="1"/><rect x="10" y="24" width="2" height="1"/><rect x="15" y="24" width="1" height="1"/><rect x="17" y="24" width="2" height="1"/><rect x="20" y="24" width="3" height="1"/><rect x="25" y="24" width="1" height="1"/><rect x="30" y="24" width="2" height="1"/><rect x="33" y="24" width="1" height="1"/><rect x="35" y="24" width="2" height="1"/><rect x="40" y="24" width="1" height="1"/><rect x="4" y="25" width="1" height="1"/><rect x="6" y="25" width="2" height="1"/><rect x="16" y="25" width="1" height="1"/><rect x="20" y="25" width="1" height="1"/><rect x="23" y="25" width="2" height="1"/><rect x="27" y="25" width="4" height="1"/><rect x="32" y="25" width="1" height="1"/><rect x="37" y="25" width="1" height="1"/><rect x="39" y="25" width="1" height="1"/><rect x="4" y="26" width="1" height="1"/><rect x="7" y="26" width="1" height="1"/><rect x="9" y="26" width="4" height="1"/><rect x="14" y="26" width="1" height="1"/><rect x="18" y="26" width="1" height="1"/><rect x="20" y="26" width="2" height="1"/><rect x="24" y="26" width="4" height="1"/><rect x="32" y="26" width="1" height="1"/><rect x="34" y="26" width="2" height="1"/><rect x="6" y="27" width="2" height="1"/><rect x="9" y="27" width="1" height="1"/><rect x="11" y="27" width="2" height="1"/><rect x="15" y="27" width="2" height="1"/><rect x="18" y="27" width="1" height="1"/><rect x="22" y="27" width="2" height="1"/><rect x="25" y="27" width="3" height="1"/><rect x="29" y="27" width="4" height="1"/><rect x="36" y="27" width="5" height="1"/><rect x="4" y="28" width="5" height="1"/><rect x="10" y="28" width="1" height="1"/><rect x="12" y="28" width="1" height="1"/><rect x="15" y="28" width="1" height="1"/><rect x="18" y="28" width="2" height="1"/><rect x="22" y="28" width="5" height="1"/><rect x="29" y="28" width="1" height="1"/><rect x="31" y="28" width="2" height="1"/><rect x="34" y="28" width="1" height="1"/><rect x="36" y="28" width="1" height="1"/><rect x="38" y="28" width="2" height="1"/><rect x="5" y="29" width="1" height="1"/><rect x="7" y="29" width="1" height="1"/><rect x="9" y="29" width="1" height="1"/><rect x="11" y="29" width="1" height="1"/><rect x="13" y="29" width="1" height="1"/><rect x="16" y="29" width="3" height="1"/><rect x="20" y="29" width="3" height="1"/><rect x="24" y="29" width="1" height="1"/><rect x="27" y="29" width="2" height="1"/><rect x="31" y="29" width="1" height="1"/><rect x="34" y="29" width="7" height="1"/><rect x="5" y="30" width="1" height="1"/><rect x="9" y="30" width="7" height="1"/><rect x="19" y="30" width="2" height="1"/><rect x="22" y="30" width="3" height="1"/><rect x="26" y="30" width="1" height="1"/><rect x="29" y="30" width="2" height="1"/><rect x="35" y="30" width="2" height="1"/><rect x="39" y="30" width="1" height="1"/><rect x="4" y="31" width="1" height="1"/><rect x="6" y="31" width="1" height="1"/><rect x="8" y="31" width="1" height="1"/><rect x="11" y="31" width="2" height="1"/><rect x="15" y="31" width="4" height="1"/><rect x="20" y="31" width="1" height="1"/><rect x="25" y="31" width="3" height="1"/><rect x="33" y="31" width="4" height="1"/><rect x="39" y="31" width="2" height="1"/><rect x="6" y="32" width="6" height="1"/><rect x="13" y="32" width="2" height="1"/><rect x="17" y="32" width="3" height="1"/><rect x="24" y="32" width="4" height="1"/><rect x="29" y="32" width="1" height="1"/><rect x="32" y="32" width="5" height="1"/><rect x="38" y="32" width="2" height="1"/><rect x="12" y="33" width="1" height="1"/><rect x="15" y="33" width="1" height="1"/><rect x="19" y="33" width="1" height="1"/><rect x="21" y="33" width="1" height="1"/><rect x="24" y="33" width="1" height="1"/><rect x="26" y="33" width="4" height="1"/><rect x="31" y="33" width="2" height="1"/><rect x="36" y="33" width="1" height="1"/><rect x="38" y="33" width="1" height="1"/><rect x="40" y="33" width="1" height="1"/><rect x="4" y="34" width="7" height="1"/><rect x="12" y="34" width="1" height="1"/><rect x="14" y="34" width="1" height="1"/><rect x="17" y="34" width="1" height="1"/><rect x="19" y="34" width="1" height="1"/><rect x="21" y="34" width="1" height="1"/><rect x="24" y="34" width="2" height="1"/><rect x="29" y="34" width="1" height="1"/><rect x="32" y="34" width="1" height="1"/><rect x="34" y="34" width="1" height="1"/><rect x="36" y="34" width="1" height="1"/><rect x="38" y="34" width="1" height="1"/><rect x="40" y="34" width="1" height="1"/><rect x="4" y="35" width="1" height="1"/><rect x="10" y="35" width="1" height="1"/><rect x="12" y="35" width="1" height="1"/><rect x="16" y="35" width="3" height="1"/><rect x="20" y="35" width="1" height="1"/><rect x="23" y="35" width="2" height="1"/><rect x="26" y="35" width="3" height="1"/><rect x="31" y="35" width="2" height="1"/><rect x="36" y="35" width="1" height="1"/><rect x="40" y="35" width="1" height="1"/><rect x="4" y="36" width="1" height="1"/><rect x="6" y="36" width="3" height="1"/><rect x="10" y="36" width="1" height="1"/><rect x="14" y="36" width="2" height="1"/><rect x="17" y="36" width="2" height="1"/><rect x="22" y="36" width="2" height="1"/><rect x="26" y="36" width="1" height="1"/><rect x="28" y="36" width="3" height="1"/><rect x="32" y="36" width="6" height="1"/><rect x="39" y="36" width="2" height="1"/><rect x="4" y="37" width="1" height="1"/><rect x="6" y="37" width="3" height="1"/><rect x="10" y="37" width="1" height="1"/><rect x="12" y="37" width="2" height="1"/><rect x="17" y="37" width="3" height="1"/><rect x="21" y="37" width="2" height="1"/><rect x="24" y="37" width="1" height="1"/><rect x="26" y="37" width="1" height="1"/><rect x="29" y="37" width="2" height="1"/><rect x="32" y="37" width="3" height="1"/><rect x="36" y="37" width="1" height="1"/><rect x="40" y="37" width="1" height="1"/><rect x="4" y="38" width="1" height="1"/><rect x="6" y="38" width="3" height="1"/><rect x="10" y="38" width="1" height="1"/><rect x="12" y="38" width="1" height="1"/><rect x="15" y="38" width="4" height="1"/><rect x="20" y="38" width="5" height="1"/><rect x="26" y="38" width="2" height="1"/><rect x="30" y="38" width="1" height="1"/><rect x="34" y="38" width="1" height="1"/><rect x="36" y="38" width="2" height="1"/><rect x="4" y="39" width="1" height="1"/><rect x="10" y="39" width="1" height="1"/><rect x="13" y="39" width="2" height="1"/><rect x="20" y="39" width="1" height="1"/><rect x="22" y="39" width="1" height="1"/><rect x="24" y="39" width="1" height="1"/><rect x="26" y="39" width="1" height="1"/><rect x="29" y="39" width="1" height="1"/><rect x="33" y="39" width="4" height="1"/><rect x="38" y="39" width="1" height="1"/><rect x="4" y="40" width="7" height="1"/><rect x="12" y="40" width="3" height="1"/><rect x="16" y="40" width="1" height="1"/><rect x="19" y="40" width="1" height="1"/><rect x="21" y="40" width="1" height="1"/><rect x="23" y="40" width="2" height="1"/><rect x="26" y="40" width="2" height="1"/><rect x="29" y="40" width="2" height="1"/><rect x="33" y="40" width="1" height="1"/><rect x="36" y="40" width="5" height="1"/></g></svg>';
+const KALSHI_TRADE_URL = 'https://kalshi.com/';
+const KALSHI_TRADE_QR_SVG = '<svg viewBox="0 0 33 33" width="360" height="360" shape-rendering="crispEdges" xmlns="http://www.w3.org/2000/svg"><rect width="33" height="33" fill="#FFFFFF"/><g fill="#000000"><rect x="4" y="4" width="7" height="1"/><rect x="12" y="4" width="1" height="1"/><rect x="18" y="4" width="1" height="1"/><rect x="22" y="4" width="7" height="1"/><rect x="4" y="5" width="1" height="1"/><rect x="10" y="5" width="1" height="1"/><rect x="12" y="5" width="1" height="1"/><rect x="16" y="5" width="2" height="1"/><rect x="20" y="5" width="1" height="1"/><rect x="22" y="5" width="1" height="1"/><rect x="28" y="5" width="1" height="1"/><rect x="4" y="6" width="1" height="1"/><rect x="6" y="6" width="3" height="1"/><rect x="10" y="6" width="1" height="1"/><rect x="12" y="6" width="1" height="1"/><rect x="14" y="6" width="2" height="1"/><rect x="17" y="6" width="2" height="1"/><rect x="22" y="6" width="1" height="1"/><rect x="24" y="6" width="3" height="1"/><rect x="28" y="6" width="1" height="1"/><rect x="4" y="7" width="1" height="1"/><rect x="6" y="7" width="3" height="1"/><rect x="10" y="7" width="1" height="1"/><rect x="13" y="7" width="3" height="1"/><rect x="17" y="7" width="4" height="1"/><rect x="22" y="7" width="1" height="1"/><rect x="24" y="7" width="3" height="1"/><rect x="28" y="7" width="1" height="1"/><rect x="4" y="8" width="1" height="1"/><rect x="6" y="8" width="3" height="1"/><rect x="10" y="8" width="1" height="1"/><rect x="12" y="8" width="1" height="1"/><rect x="15" y="8" width="1" height="1"/><rect x="17" y="8" width="2" height="1"/><rect x="20" y="8" width="1" height="1"/><rect x="22" y="8" width="1" height="1"/><rect x="24" y="8" width="3" height="1"/><rect x="28" y="8" width="1" height="1"/><rect x="4" y="9" width="1" height="1"/><rect x="10" y="9" width="1" height="1"/><rect x="14" y="9" width="1" height="1"/><rect x="17" y="9" width="2" height="1"/><rect x="22" y="9" width="1" height="1"/><rect x="28" y="9" width="1" height="1"/><rect x="4" y="10" width="7" height="1"/><rect x="12" y="10" width="1" height="1"/><rect x="14" y="10" width="1" height="1"/><rect x="16" y="10" width="1" height="1"/><rect x="18" y="10" width="1" height="1"/><rect x="20" y="10" width="1" height="1"/><rect x="22" y="10" width="7" height="1"/><rect x="16" y="11" width="2" height="1"/><rect x="19" y="11" width="1" height="1"/><rect x="4" y="12" width="1" height="1"/><rect x="7" y="12" width="7" height="1"/><rect x="17" y="12" width="1" height="1"/><rect x="19" y="12" width="3" height="1"/><rect x="24" y="12" width="1" height="1"/><rect x="26" y="12" width="3" height="1"/><rect x="4" y="13" width="1" height="1"/><rect x="9" y="13" width="1" height="1"/><rect x="12" y="13" width="3" height="1"/><rect x="17" y="13" width="3" height="1"/><rect x="23" y="13" width="5" height="1"/><rect x="4" y="14" width="2" height="1"/><rect x="8" y="14" width="3" height="1"/><rect x="14" y="14" width="4" height="1"/><rect x="19" y="14" width="1" height="1"/><rect x="21" y="14" width="3" height="1"/><rect x="25" y="14" width="1" height="1"/><rect x="28" y="14" width="1" height="1"/><rect x="4" y="15" width="2" height="1"/><rect x="7" y="15" width="2" height="1"/><rect x="12" y="15" width="1" height="1"/><rect x="15" y="15" width="3" height="1"/><rect x="19" y="15" width="1" height="1"/><rect x="22" y="15" width="1" height="1"/><rect x="24" y="15" width="5" height="1"/><rect x="5" y="16" width="3" height="1"/><rect x="9" y="16" width="3" height="1"/><rect x="14" y="16" width="4" height="1"/><rect x="20" y="16" width="1" height="1"/><rect x="22" y="16" width="2" height="1"/><rect x="28" y="16" width="1" height="1"/><rect x="4" y="17" width="3" height="1"/><rect x="8" y="17" width="2" height="1"/><rect x="11" y="17" width="4" height="1"/><rect x="17" y="17" width="3" height="1"/><rect x="24" y="17" width="1" height="1"/><rect x="27" y="17" width="1" height="1"/><rect x="4" y="18" width="3" height="1"/><rect x="10" y="18" width="8" height="1"/><rect x="19" y="18" width="1" height="1"/><rect x="21" y="18" width="1" height="1"/><rect x="24" y="18" width="5" height="1"/><rect x="4" y="19" width="1" height="1"/><rect x="8" y="19" width="1" height="1"/><rect x="11" y="19" width="1" height="1"/><rect x="13" y="19" width="1" height="1"/><rect x="15" y="19" width="1" height="1"/><rect x="20" y="19" width="1" height="1"/><rect x="22" y="19" width="2" height="1"/><rect x="25" y="19" width="2" height="1"/><rect x="28" y="19" width="1" height="1"/><rect x="4" y="20" width="1" height="1"/><rect x="7" y="20" width="4" height="1"/><rect x="12" y="20" width="3" height="1"/><rect x="18" y="20" width="1" height="1"/><rect x="20" y="20" width="5" height="1"/><rect x="26" y="20" width="2" height="1"/><rect x="12" y="21" width="2" height="1"/><rect x="15" y="21" width="4" height="1"/><rect x="20" y="21" width="1" height="1"/><rect x="24" y="21" width="1" height="1"/><rect x="26" y="21" width="2" height="1"/><rect x="4" y="22" width="7" height="1"/><rect x="12" y="22" width="1" height="1"/><rect x="14" y="22" width="2" height="1"/><rect x="20" y="22" width="1" height="1"/><rect x="22" y="22" width="1" height="1"/><rect x="24" y="22" width="1" height="1"/><rect x="28" y="22" width="1" height="1"/><rect x="4" y="23" width="1" height="1"/><rect x="10" y="23" width="1" height="1"/><rect x="12" y="23" width="1" height="1"/><rect x="14" y="23" width="1" height="1"/><rect x="16" y="23" width="1" height="1"/><rect x="18" y="23" width="3" height="1"/><rect x="24" y="23" width="1" height="1"/><rect x="27" y="23" width="1" height="1"/><rect x="4" y="24" width="1" height="1"/><rect x="6" y="24" width="3" height="1"/><rect x="10" y="24" width="1" height="1"/><rect x="12" y="24" width="1" height="1"/><rect x="14" y="24" width="1" height="1"/><rect x="16" y="24" width="9" height="1"/><rect x="28" y="24" width="1" height="1"/><rect x="4" y="25" width="1" height="1"/><rect x="6" y="25" width="3" height="1"/><rect x="10" y="25" width="1" height="1"/><rect x="12" y="25" width="3" height="1"/><rect x="18" y="25" width="1" height="1"/><rect x="20" y="25" width="3" height="1"/><rect x="27" y="25" width="2" height="1"/><rect x="4" y="26" width="1" height="1"/><rect x="6" y="26" width="3" height="1"/><rect x="10" y="26" width="1" height="1"/><rect x="13" y="26" width="1" height="1"/><rect x="16" y="26" width="1" height="1"/><rect x="18" y="26" width="3" height="1"/><rect x="24" y="26" width="5" height="1"/><rect x="4" y="27" width="1" height="1"/><rect x="10" y="27" width="1" height="1"/><rect x="13" y="27" width="1" height="1"/><rect x="18" y="27" width="1" height="1"/><rect x="21" y="27" width="4" height="1"/><rect x="26" y="27" width="3" height="1"/><rect x="4" y="28" width="7" height="1"/><rect x="12" y="28" width="1" height="1"/><rect x="17" y="28" width="2" height="1"/><rect x="20" y="28" width="1" height="1"/><rect x="25" y="28" width="1" height="1"/><rect x="28" y="28" width="1" height="1"/></g></svg>';
 const PADLOCK_CLOSED = '<svg class="lockIcon glyphIcon" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2" stroke="currentColor" stroke-width="2"/><path d="M8 11V7a4 4 0 018 0v4" stroke="currentColor" stroke-width="2"/></svg>';
 const PADLOCK_OPEN = '<svg class="lockIcon glyphIcon" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2" stroke="currentColor" stroke-width="2"/><path d="M8 11V8a4 4 0 017.6-1.7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
 // Global header entry for Positions (rule D) — a small list/ledger glyph, not a full icon set.
@@ -2832,11 +2853,7 @@ function commsChipHTML(hdrFocus){
 // — it's always a real control, OK opens the gate/manage modal either way (see
 // authStatusHTML/openGateStandalone) — so unlocking no longer drops it out of D-pad reach.
 function headerOrder(){
-  const order=[];
-  if (S.auth==='ready') order.push('auth');
-  order.push('positions');
-  order.push('balance');
-  return order;
+  return [];
 }
 function headerElId(id){ return id==='auth'?'#authChip':id==='positions'?'#posChip':'#acctChip'; }
 // Which physical header row a control lives in (E04 two-row header pass) — 'auth'/Trading is
@@ -2898,16 +2915,11 @@ function jumpToAncestor(item){
     else if (popped==='detail') S.detail=null;
     else if (popped==='account') S.accountFocus=null;
   }
-  // Predictions return-state rule (E04 final-nav pass): nothing while the user is away from
-  // Predictions ever mutates S.tab/S.rowIdx (they only ever change inside the 'list' screen's
-  // own key handlers), so the Discovery tab and the focused Event Card are ALREADY exactly
-  // preserved just by popping back here — no separate snapshot needs to be stored. The one
-  // deliberate exception is Market focus: the spec calls for landing on the first Market of
-  // that Event, never the specific Market that had been focused before leaving, so that one
-  // field is force-reset here rather than left to carry over. listZone is reset too, in case
-  // the header (rather than the card itself) was what the user left from.
+  // Exploration 18 return-state rule: S.tab, S.rowIdx and S.marketIdx remain unchanged while
+  // Detail is on top of the stack. Popping back therefore restores the exact tab, Event card
+  // and Market row that opened Detail. listZone returns to rows so that preserved Market is
+  // immediately actionable again.
   if (item.label==='Predictions' && S.stack[S.stack.length-1]==='list'){
-    S.marketIdx = 0;
     S.listZone = 'rows';
   }
   render(true);
@@ -2950,6 +2962,10 @@ function moveCtxFocus(stateObj, idxKey, delta, count){
   return true;
 }
 function renderHeader(){
+  // Exploration 18: the header is branding only. Positions, Trade and Balance have been
+  // removed from both presentation and the focus graph.
+  $('#pHeader').innerHTML = `<div class="hdrRow hdrRow1">${brandMarkHTML()}</div>`;
+  return;
   const onList = S.stack[S.stack.length-1]==='list';
   // Global Header focus is active either through the 'list' screen's own long-standing
   // listZone==='header' (unchanged) or through S.hdrActive (new — reachable one Up-press
@@ -3121,17 +3137,7 @@ function goToComms(){
    ("skeleton and final content occupy essentially the same footprint").
    ============================================================ */
 function headerSkeletonHTML(){
-  // Brandmark stays real text (static branding, never data — same reasoning renderHeader's
-  // own comments give for never gating it on any other state) — only the two data-bearing
-  // chips (Trading status, Positions·N / Balance+avatar) are skeleton here.
-  return `<div class="hdrRow hdrRow1">
-      ${brandMarkHTML()}
-      ${skelPill('150px','32px')}
-    </div>
-    <div class="hdrRow hdrRow2">
-      ${skelPill('130px','32px')}
-      <div style="display:flex;align-items:center;gap:14px;">${skelLine('90px','20px')}${skelBlock('44px','44px','50%')}</div>
-    </div>`;
+  return `<div class="hdrRow hdrRow1">${brandMarkHTML()}</div>`;
 }
 function tabsSkeletonHTML(){
   return `<div id="tabs"><div id="tabsTrack">` +
@@ -3819,11 +3825,11 @@ function scrollCommsToFocus(instant){
 function commsKey(ok,back,dir){
   if (back){ closePanel(); return; }
   if (S.commsLoading) return;
-  if (S.hdrActive){ headerKey(ok, back, dir, ()=>{ render(); }); return; }
+  if (S.hdrActive){ S.hdrActive=false; render(); return; }
   if (S.commsCtxFocus){
     const items = S.commsCtx;
     if (dir==='down'){ S.commsCtxFocus=false; render(); return; }
-    if (dir==='up'){ S.hdrActive=true; S.headerFocus=headerOrder()[0]; render(); return; }
+    if (dir==='up'){ bounce(`#ctxItem${S.commsCtxIdx}`,'y'); return; }
     if (dir==='left'){ if(S.commsCtxIdx>0){ S.commsCtxIdx--; render(); } else bounce(`#ctxItem${S.commsCtxIdx}`,'x'); return; }
     if (dir==='right'){ if(S.commsCtxIdx<items.length-1){ S.commsCtxIdx++; render(); } else bounce(`#ctxItem${S.commsCtxIdx}`,'x'); return; }
     if (ok){ jumpToAncestor(items[S.commsCtxIdx]); return; }
@@ -4491,37 +4497,14 @@ function renderDetail(back){
       ${posHTML}
       ${yesNoZoneHTML}
       <div class="ctaWrap"><div class="btn btnSecondary ${d.focus==='back'?'focused':''}" id="backBtn">Back to markets</div></div>`;
-  } else if (S.auth!=='ready'){
-    // State 1 — browse-only. Prices fully visible; Yes/No focusable for comparison.
-    // Amount and payout are omitted entirely (nothing to size yet), not just dimmed.
-    // The old giant "% chance" hero block above this control was removed (rule #5) — it was
-    // redundant with the YES/NO pills' own live percentages just below.
-    bodyHTML = `
-      ${posHTML}
-      <div class="yesno">
-        ${ynBtnHTML(m,'yes',{focused:d.focus==='yes', id:'ynYes'})}
-        ${ynBtnHTML(m,'no',{focused:d.focus==='no', id:'ynNo'})}
-      </div>
-      <div class="ctaWrap"><div class="btn btnPrimary ${d.focus==='cta'?'focused':''}" id="ctaBtn">Sign in to trade</div></div>`;
   } else {
-    // Fully trade-ready as soon as an account is linked — trading-authorization (the
-    // Trading PIN + policy gate) is now enforced at Confirm time (rule B), not here.
+    // Exploration 18 is an account-free simulation. Yes/No, amount and indicative payout
+    // remain interactive for everyone; only the final real-trade handoff leaves the TV.
     const sideSel = d.side;
-    const {payout, cost} = sideSel ? tradeNumbers(m, sideSel, amount) : {payout:null,cost:null};
-    const insufficient = sideSel && cost > S.balance;
-    const ctaEnabled = !!sideSel && !insufficient;
-    const px = sideSel==='no'? m.no : m.yes;
-    let ctaHTML;
-    if (insufficient){
-      ctaHTML = `<div class="ctaWrap"><div class="insufficientBox" id="ctaBtn">
-          <div class="insufficientTitle">Insufficient balance</div>
-          <div class="insufficientSub">Add funds on ${brandDomain()} or the ${brandName()} app, or choose a lower amount.</div>
-        </div></div>`;
-    } else {
-      const verb = d.addMode ? 'Add' : 'Buy';
-      const label = sideSel ? `${verb} ${sideSel==='yes'?'Yes':'No'} · ${px}¢` : 'Choose Yes or No';
-      ctaHTML = `<div class="ctaWrap"><div class="btn btnPrimary trade ${sideSel==='no'?'noSide':''} ${ctaEnabled?'':'disabled'} ${d.focus==='cta'?'focused':''}" id="ctaBtn">${label}</div></div>`;
-    }
+    const {payout} = sideSel ? tradeNumbers(m, sideSel, amount) : {payout:null};
+    const ctaEnabled = !!sideSel;
+    const label = sideSel ? 'Now trade for real' : 'Choose Yes or No';
+    const ctaHTML = `<div class="ctaWrap"><div class="btn btnPrimary ${ctaEnabled?'':'disabled'} ${d.focus==='cta'?'focused':''}" id="ctaBtn">${label}</div></div>`;
     const yesnoHTML = d.addMode
       ? `<div class="yesno">
            ${ynBtnHTML(m,'yes',{selected:sideSel==='yes'})}
@@ -4573,6 +4556,31 @@ function renderDetail(back){
     d.bannerTimed = true;
     setTimeout(()=>{ const b=$('#pcBanner'); if(b) b.classList.add('fade'); if(S.detail) S.detail.banner=null; }, 6000);
   }
+}
+
+/* ============================================================
+   RENDER — Kalshi handoff
+   ============================================================ */
+function renderHandoff(){
+  renderHeader();
+  const h=S.handoff, m=byId(h.mId);
+  const sideLabel=h.side==='yes'?'Yes':'No';
+  const price=h.side==='yes'?m.yes:m.no;
+  $('#pBody').innerHTML = `<div class="screen ${animCls()}" id="handoff">
+    ${ctxNavHTML([{label:'Market',popCount:1}], false, S.hdrActive?-1:0)}
+    <div class="handoffBody">
+      <div class="handoffEyebrow">Continue on Kalshi</div>
+      <div class="handoffTitle">Now trade for real</div>
+      <div class="handoffCopy">Scan with your phone to open Kalshi. Sign in, review the live price and confirm there.</div>
+      <div class="handoffQR">${KALSHI_TRADE_QR_SVG}</div>
+      <div class="handoffMarket">
+        <div class="question">${esc(m.name)}</div>
+        <div class="selection">${sideLabel} · ${price}¢ · Simulated amount ${fmt$(h.amount)}</div>
+      </div>
+      <div class="handoffUrl">kalshi.com</div>
+      <div class="handoffNote">No trade is submitted from this TV.</div>
+    </div>
+  </div>`;
 }
 
 /* ============================================================
@@ -5187,6 +5195,7 @@ function render(back){
   const top = S.stack[S.stack.length-1];
   if (top==='list') renderList(back);
   else if (top==='detail') renderDetail(back);
+  else if (top==='handoff') renderHandoff();
   else if (top==='confirm') renderConfirm();
   else if (top==='result') renderResult();
   else if (top==='pin') renderPin();
@@ -5406,6 +5415,7 @@ function closePanel(){
   S.stack=[];
   S.mode='entry';
   S.hdrActive=false;
+  S.handoff=null;
   S.cardTrade=null; // E05: System Back/closing the panel always fully collapses any expanded Market
   document.getElementById('scaler').classList.remove('panel-open');
   focusEntry();
@@ -5522,6 +5532,10 @@ function bounce(sel, axis){
 }
 
 window.addEventListener('keydown', e=>{
+  // The password gate is ordinary browser UI, not part of the Roku remote simulation.
+  // Let the focused input/button keep native editing and form behavior: Backspace deletes,
+  // Enter submits, Space activates the button, and arrow keys move the text caret.
+  if (document.getElementById('previewGate')) return;
   // normalize: some environments deliver key:"" — fall back to e.code / keyCode
   let k=e.key;
   if (!k || k===''){
@@ -5605,6 +5619,7 @@ window.addEventListener('keydown', e=>{
   const top = S.stack[S.stack.length-1];
   if (top==='list') listKey(ok,back,dir);
   else if (top==='detail') detailKey(ok,back,dir);
+  else if (top==='handoff') handoffKey(ok,back,dir);
   else if (top==='confirm') confirmKey(ok,back,dir);
   else if (top==='result') resultKey(ok,back,dir);
   else if (top==='pin') pinKey(ok,back,dir);
@@ -5633,17 +5648,13 @@ function listKey(ok,back,dir){
   // now uses (exploration04 nav-architecture pass), so a Global Header action behaves
   // identically regardless of which screen it was pressed from (rule 17).
   if (S.listZone==='header'){
-    headerKey(ok, back, dir, ()=>{ S.listZone='tabs'; S.tabIdx=S.tab; render(); });
+    S.listZone='tabs'; S.tabIdx=S.tab; render();
     return;
   }
   if (S.listZone==='tabs'){
     if (dir==='left') moveDiscoveryTabFocus(-1);
     else if (dir==='right') moveDiscoveryTabFocus(1);
-    else if (dir==='up'){
-      S.listZone='header';
-      if (!headerOrder().includes(S.headerFocus)) S.headerFocus='balance';
-      render();
-    }
+    else if (dir==='up') bounce('#tabs','y');
     else if (dir==='down'){ S.tabIdx=S.tab; S.listZone='rows'; restoreTabCardFocus(); S._cardFocusMotion='in'; render(); }
     else if (ok) activateDiscoveryTab();
     return;
@@ -5651,14 +5662,11 @@ function listKey(ok,back,dir){
   // cards zone (exploration03) — Left/Right moves the focused Event card (S.rowIdx);
   // Up/Down moves the focused Market row inside it (S.marketIdx). Priority 0: every pure
   // focus move below patches classes on the existing DOM in place (moveCardFocus /
-  // moveMarketRowFocus) instead of calling render(), which would rebuild every card. In
-  // Exploration 12, OK returns to the earlier in-place interaction: the focused Market
-  // expands inside its Event Card instead of navigating to a separate Market Detail screen.
-  // E05: while a Market is expanded in place, it captures ALL D-pad input (its own
-  // yes/no/amount/cta zones, plus the Up-to-collapse gesture) — normal card/row navigation
-  // below is unreachable until it collapses. Back is already handled above, unconditionally,
-  // before this point — so System Back still always closes the whole panel, never this.
-  if (S.cardTrade){ cardTradeKey(ok,back,dir); return; }
+  // moveMarketRowFocus) instead of calling render(), which would rebuild every card.
+  // Exploration 18 restores the separate Market Detail screen used by Exploration 11.
+  // cardTrade remains in the inherited source for compatibility with older demo states,
+  // but new interaction never opens an inline trade surface.
+  if (S.cardTrade){ S.cardTrade=null; }
   if (rowCount===0) return; // defensive: an empty tab has nothing to focus
   const curEv = visibleEvents()[S.rowIdx];
   const marketCount = curEv.markets.length;
@@ -5680,10 +5688,9 @@ function listKey(ok,back,dir){
     else bounce('.marRow.focused','y');
   }
   else if (ok){
-    // E12: restore the in-place Market interaction inherited from E05.
-    // The existing cardTrade flow handles expansion, loading, Yes/No, Amount and Review
-    // without leaving the Event Card or changing the horizontal carousel context.
-    openCardTrade(byId(curEv.markets[S.marketIdx].id));
+    // Tab/card/market indices remain in S while Detail is on top of the stack, so the
+    // contextual return restores the exact market that opened this screen.
+    openDetail(byId(curEv.markets[S.marketIdx].id));
   }
 }
 /* ---------- Event Market List keys (rule I) ---------- */
@@ -5733,11 +5740,11 @@ function positionsKey(ok,back,dir){
   // PositionsSkeleton (task §12): ignore all D-pad input while the row-list is still in
   // skeleton state — same pattern as cardTradeKey's `if (S.cardTrade.loading) return;` guard.
   if (S.positionsLoading) return;
-  if (S.hdrActive){ headerKey(ok, back, dir, ()=>{ render(); }); return; }
+  if (S.hdrActive){ S.hdrActive=false; render(); return; }
   if (S.posCtxFocus){
     const items = S.positionsCtx;
     if (dir==='down'){ S.posCtxFocus=false; render(); return; }
-    if (dir==='up'){ S.hdrActive=true; S.headerFocus=headerOrder()[0]; render(); return; }
+    if (dir==='up'){ bounce(`#ctxItem${S.posCtxIdx}`,'y'); return; }
     if (dir==='left'){ if(S.posCtxIdx>0){ S.posCtxIdx--; render(); } else bounce(`#ctxItem${S.posCtxIdx}`,'x'); return; }
     if (dir==='right'){ if(S.posCtxIdx<items.length-1){ S.posCtxIdx++; render(); } else bounce(`#ctxItem${S.posCtxIdx}`,'x'); return; }
     if (ok){ jumpToAncestor(items[S.posCtxIdx]); return; }
@@ -5821,6 +5828,31 @@ function moveDetailAmount(delta, m){
     const payEl = $('#payoutVal'); if (payEl) payEl.textContent = fmt$(payout);
   }
 }
+function openTradeHandoff(m, side, amount){
+  S.handoff={mId:m.id,side,amount};
+  S.stack.push('handoff');
+  S._anim='in';
+  render();
+}
+function handoffKey(ok,back,dir){
+  if (back){ closePanel(); return; }
+  if (S.hdrActive){
+    S.hdrActive=false;
+    render();
+    return;
+  }
+  if (dir==='up'){
+    bounce('#ctxItem0','y');
+    return;
+  }
+  if (ok){
+    S.stack.pop();
+    S.handoff=null;
+    render(true);
+    return;
+  }
+  if (dir) bounce('#ctxItem0',dir==='left'||dir==='right'?'x':'y');
+}
 /* ---------- detail keys ---------- */
 function detailKey(ok,back,dir){
   const d = S.detail, m = byId(d.mId);
@@ -5833,7 +5865,7 @@ function detailKey(ok,back,dir){
   // Back pop. One further Up from there reaches the persistent Global Header itself (rule
   // 17/19 — exploration04 nav-architecture pass), handled by the shared headerKey() below.
   if (back){ closePanel(); return; }
-  if (S.hdrActive){ headerKey(ok, back, dir, ()=>{ moveDetailFocus('chevron'); }); return; }
+  if (S.hdrActive){ S.hdrActive=false; moveDetailFocus('chevron'); return; }
 
   const halted = m.status==='suspended'||m.status==='closed'||m.status==='settled';
   const pos = positionFor(m.id);
@@ -5853,8 +5885,7 @@ function detailKey(ok,back,dir){
     const items = d.ctxAncestry;
     if (dir==='down'){ moveDetailFocus(d.chevronFrom || (halted?'back':'yes')); return; }
     if (dir==='up'){
-      const cur=$(`#ctxItem${d.ctxIdx}`); if(cur) cur.classList.remove('focused');
-      S.hdrActive=true; S.headerFocus=headerOrder()[0]; renderHeader();
+      bounce(`#ctxItem${d.ctxIdx}`,'y');
       return;
     }
     if (dir==='left'){ if(!moveCtxFocus(d,'ctxIdx',-1,items.length)) bounce(`#ctxItem${d.ctxIdx}`,'x'); return; }
@@ -5885,27 +5916,10 @@ function detailKey(ok,back,dir){
     return;
   }
 
-  // State 1 — anonymous browse-only
-  if (S.auth!=='ready'){
-    if (d.focus==='yes'||d.focus==='no'){
-      if (dir==='left'){ if(d.focus!=='yes'){moveDetailFocus('yes');} else bounce('#ynYes','x'); }
-      else if (dir==='right'){ if(d.focus!=='no'){moveDetailFocus('no');} else bounce('#ynNo','x'); }
-      else if (dir==='down'){ moveDetailFocus('cta'); }
-      else if (dir==='up'){ if(hasPosActions){ moveDetailFocus('posAdd'); } else { d.chevronFrom=d.focus; d.ctxIdx=d.ctxAncestry.length-1; moveDetailFocus('chevron'); } }
-      else if (ok) openSignIn({mId:m.id});
-    } else {                       // cta
-      if (dir==='up'){ moveDetailFocus('yes'); }
-      else if (dir) bounce('#ctaBtn', dir==='down'?'y':'x');
-      else if (ok) openSignIn({mId:m.id});
-    }
-    return;
-  }
-
-  // Fully trade-ready as soon as an account is linked — trading-authorization (Trading
-  // PIN + policy) is enforced at Confirm time (rule B), not here.
+  // Exploration 18 keeps this simulation interactive without an account or TV balance.
   const amount = AMOUNTS[d.amtIdx];
-  const insufficient = d.side && tradeNumbers(m,d.side,amount).cost > S.balance;
-  const ctaEnabled = !!d.side && !insufficient;
+  const insufficient = false;
+  const ctaEnabled = !!d.side;
 
   if (d.addMode){
     // side is already fixed from an existing position — never re-asked (BEHAVIOR.md §4.11)
@@ -5925,7 +5939,7 @@ function detailKey(ok,back,dir){
       else if (dir==='down'){ bounce('#ctaBtn','y'); }
       else if (ok){
         if (!ctaEnabled){ bounce('#ctaBtn','x'); return; }
-        openConfirm();
+        openTradeHandoff(m,d.side,amount);
       }
     }
     return;
@@ -5969,7 +5983,7 @@ function detailKey(ok,back,dir){
     else if (dir==='down'){ bounce('#ctaBtn','y'); }
     else if (ok){
       if (!ctaEnabled){ bounce('#ctaBtn','x'); return; }
-      openConfirm();
+      openTradeHandoff(m,d.side,amount);
     }
   }
 }
@@ -5988,12 +6002,12 @@ function sellKey(ok,back,dir){
   // so unlike Detail this uses the screen's existing full-render() pattern rather than a
   // targeted DOM patch — renderSell() already re-renders on every Left/Right step.
   if (back){ closePanel(); return; }
-  if (S.hdrActive){ headerKey(ok, back, dir, ()=>{ render(); }); return; }
+  if (S.hdrActive){ S.hdrActive=false; render(); return; }
   const s = S.sell;
   if (s.ctxFocus){
     const items = s.ctxAncestry;
     if (dir==='down'){ s.ctxFocus=false; render(); return; }
-    if (dir==='up'){ S.hdrActive=true; S.headerFocus=headerOrder()[0]; render(); return; }
+    if (dir==='up'){ bounce(`#ctxItem${s.ctxIdx}`,'y'); return; }
     if (dir==='left'){ if(s.ctxIdx>0){ s.ctxIdx--; render(); } else bounce(`#ctxItem${s.ctxIdx}`,'x'); return; }
     if (dir==='right'){ if(s.ctxIdx<items.length-1){ s.ctxIdx++; render(); } else bounce(`#ctxItem${s.ctxIdx}`,'x'); return; }
     if (ok){ jumpToAncestor(items[s.ctxIdx]); return; }
@@ -6352,11 +6366,11 @@ function armSignout(){
 function accountKey(ok,back,dir){
   if (back){ closePanel(); return; }
   if (S.accountLoading) return;
-  if (S.hdrActive){ headerKey(ok, back, dir, ()=>{ render(); }); return; }
+  if (S.hdrActive){ S.hdrActive=false; render(); return; }
   if (S.acctCtxFocus){
     const items = S.accountCtx;
     if (dir==='down'){ S.acctCtxFocus=false; S.accountZone='tabs'; render(); return; }
-    if (dir==='up'){ S.hdrActive=true; S.headerFocus=headerOrder()[0]; render(); return; }
+    if (dir==='up'){ bounce(`#ctxItem${S.acctCtxIdx}`,'y'); return; }
     if (dir==='left'){ if(S.acctCtxIdx>0){ S.acctCtxIdx--; render(); } else bounce(`#ctxItem${S.acctCtxIdx}`,'x'); return; }
     if (dir==='right'){ if(S.acctCtxIdx<items.length-1){ S.acctCtxIdx++; render(); } else bounce(`#ctxItem${S.acctCtxIdx}`,'x'); return; }
     if (ok){ jumpToAncestor(items[S.acctCtxIdx]); return; }
