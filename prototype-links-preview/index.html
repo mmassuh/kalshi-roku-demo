@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+</head>
+<body>
+<title>Kalshi Roku Demo · Prototype and Figma Capture Links</title>
+<style>
+/* Password gate — single-theme dark by design (TV context), colors from DESIGN.md */
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{height:100%;}
+body{
+  background:#000;
+  color:rgba(255,255,255,.92);
+  font-family:-apple-system,"Helvetica Neue",Helvetica,Arial,sans-serif;
+  display:flex;align-items:center;justify-content:center;
+}
+.gate{
+  width:min(420px,90vw);
+  background:#13161A;
+  border:1.5px solid rgba(255,255,255,.10);
+  border-radius:16px;
+  padding:40px;
+  display:flex;flex-direction:column;gap:20px;
+  text-align:center;
+}
+.kdot{
+  width:56px;height:56px;border-radius:14px;margin:0 auto;
+  background:#28CC95;color:#00351F;
+  display:flex;align-items:center;justify-content:center;
+  font-size:30px;font-weight:700;
+}
+h1{font-size:22px;font-weight:600;letter-spacing:-.01em;}
+p.sub{font-size:15px;line-height:1.45;color:rgba(255,255,255,.70);}
+input{
+  height:52px;border-radius:26px;
+  background:#1A1D22;border:2px solid rgba(255,255,255,.16);
+  color:rgba(255,255,255,.92);
+  font-size:17px;text-align:center;letter-spacing:.04em;
+  outline:none;width:100%;
+}
+input:focus{border-color:#28CC95;}
+button{
+  height:52px;border-radius:26px;border:none;cursor:pointer;
+  background:#28CC95;color:#fff;
+  font-size:17px;font-weight:600;width:100%;
+  transition:transform .12s,opacity .12s;
+}
+button:hover{transform:scale(1.02);}
+button:disabled{opacity:.5;transform:none;cursor:default;}
+button:focus-visible{outline:3px solid rgba(40,204,149,.5);outline-offset:2px;}
+.err{font-size:14px;color:#FF4D6A;min-height:18px;}
+@media (prefers-reduced-motion: reduce){button{transition:none;}button:hover{transform:none;}}
+</style>
+
+<div class="gate">
+  <div class="kdot">K</div>
+  <h1>Kalshi &middot; Roku Prototype</h1>
+  <p class="sub">This demo is password-protected.<br>Enter the password to open it.</p>
+  <input id="pw" type="password" placeholder="Password" autocomplete="off" autofocus>
+  <button id="go">Unlock</button>
+  <div class="err" id="err"></div>
+</div>
+
+<script>
+const PAYLOAD_B64 = "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";
+const ITER = 300000;
+
+async function unlock(){
+  const btn = document.getElementById('go');
+  const err = document.getElementById('err');
+  const pw = document.getElementById('pw').value;
+  if (!pw) return;
+  btn.disabled = true; btn.textContent = 'Unlocking…'; err.textContent = '';
+  try {
+    const raw = Uint8Array.from(atob(PAYLOAD_B64), c => c.charCodeAt(0));
+    // OpenSSL salted format: "Salted__" + 8-byte salt + ciphertext
+    const magic = new TextDecoder().decode(raw.slice(0,8));
+    if (magic !== 'Salted__') throw new Error('bad payload');
+    const salt = raw.slice(8,16);
+    const ct = raw.slice(16);
+    // openssl enc -aes-256-cbc -pbkdf2 -iter N -md sha256: key||iv = PBKDF2-SHA256(pw, salt, N, 48 bytes)
+    const pwKey = await crypto.subtle.importKey('raw', new TextEncoder().encode(pw), 'PBKDF2', false, ['deriveBits']);
+    const bits = new Uint8Array(await crypto.subtle.deriveBits(
+      {name:'PBKDF2', salt, iterations:ITER, hash:'SHA-256'}, pwKey, 48*8));
+    const key = await crypto.subtle.importKey('raw', bits.slice(0,32), {name:'AES-CBC'}, false, ['decrypt']);
+    const iv = bits.slice(32,48);
+    const plain = await crypto.subtle.decrypt({name:'AES-CBC', iv}, key, ct);
+    const html = new TextDecoder().decode(plain);
+    if (!html.includes('Kalshi · Roku Prototype — Exploration 23')) throw new Error('bad password');
+    sessionStorage.setItem('tappp-kalshi-preview-access','granted');
+    document.open();
+    document.write(html);
+    document.close();
+  } catch(e){
+    btn.disabled = false; btn.textContent = 'Unlock';
+    err.textContent = 'Wrong password. Try again.';
+  }
+}
+document.getElementById('go').addEventListener('click', unlock);
+document.getElementById('pw').addEventListener('keydown', e => { if (e.key === 'Enter') unlock(); });
+</script>
+
+</body>
+</html>
