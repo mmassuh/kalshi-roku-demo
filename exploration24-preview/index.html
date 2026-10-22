@@ -1790,9 +1790,21 @@ html,body{height:100%;background:#000;overflow:hidden;font-family:var(--font-bod
 .btnSecondary.danger.focused{background:var(--no-tint);}
 .btnSecondary.arming{opacity:.5;}
 
-/* ---------- dev footer (not part of TV canvas) ---------- */
-#devbar{position:fixed;left:0;right:0;bottom:0;background:rgba(0,0,0,.85);color:rgba(255,255,255,.55);font:var(--weight-regular) 12px/1.4 -apple-system,Helvetica,sans-serif;padding:6px 12px;z-index:99;display:flex;gap:18px;flex-wrap:wrap;}
-#devbar b{color:rgba(255,255,255,.85);font-weight:600;}
+/* Browser-only preview controls. They sit outside the 1920x1080 TV canvas, reserve no
+   layout space, and fade completely when idle so the prototype can be judged full-screen. */
+#previewTools{position:fixed;top:16px;left:50%;z-index:100;transform:translateX(-50%);color:#fff;font:500 14px/20px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;opacity:1;transition:opacity 180ms ease;}
+#previewTools.previewToolsIdle:not(.previewToolsOpen){opacity:0;pointer-events:none;}
+.previewToolsDock{display:flex;justify-content:center;gap:8px;}
+.previewToolButton{display:flex;align-items:center;gap:8px;height:42px;padding:0 16px;border:1px solid rgba(255,255,255,.22);border-radius:999px;background:rgba(10,12,15,.92);color:rgba(255,255,255,.9);font:inherit;cursor:pointer;}
+.previewToolButton:hover,.previewToolButton:focus-visible{border-color:var(--brand);outline:none;color:#fff;}
+.previewToolButton svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+#previewHelp{position:absolute;top:52px;left:50%;width:560px;transform:translateX(-50%);padding:22px 24px;border:1px solid rgba(255,255,255,.18);border-radius:16px;background:rgba(10,12,15,.97);color:rgba(255,255,255,.72);}
+#previewHelp[hidden]{display:none;}
+#previewHelp h2{margin:0 0 14px;color:#fff;font-size:18px;line-height:24px;}
+.previewHelpRow{display:grid;grid-template-columns:144px 1fr;gap:18px;padding:8px 0;border-top:1px solid rgba(255,255,255,.08);}
+.previewHelpRow:first-of-type{border-top:0;}
+.previewHelpKeys{color:#fff;font-variant-numeric:tabular-nums;}
+.previewHelpNote{margin-top:14px;color:rgba(255,255,255,.46);font-size:12px;line-height:18px;}
 
 /* ============================================================
    PHASE 4 ADDITIONS — trading authorization, order lifecycle,
@@ -1938,12 +1950,29 @@ html,body{height:100%;background:#000;overflow:hidden;font-family:var(--font-bod
   <div id="toastHost"></div>
 </div>
 
-<div id="devbar">
-  <span><b>C</b> change prompt · <b id="promptVariantLabel">Question · 2/3</b></span>
-  <span><b>Remote:</b> ↑ ↓ ← → D-pad · <b>Enter</b> OK · <b>Esc/Backspace</b> Back</span>
-  <span><b>Demo:</b> E list error · L replay loading · P PIN gate <b id="pinFlag">PIN gate: off</b> · X force-expire trading auth · V replay Win Celebration · Shift+V settle position Won (real flow) · D settle position Lost · T cycle theme (kalshi -> roku -> polymarket)</span>
-  <span><b>Demo (arm next order result — press while Review is open):</b> F partial fill · N not filled · K error, known · U error, status unknown</span>
-  <span>Prototype · tokens from DESIGN.md · sample data</span>
+<div id="previewTools" aria-label="Prototype preview tools">
+  <div class="previewToolsDock">
+    <button class="previewToolButton" id="previewHelpButton" type="button" aria-expanded="false" aria-controls="previewHelp">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M9.8 9a2.4 2.4 0 1 1 3.5 2.1c-.9.5-1.3 1-1.3 2"></path><path d="M12 17h.01"></path></svg>
+      Controls
+    </button>
+    <button class="previewToolButton" id="fullscreenButton" type="button">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3H3v5M16 3h5v5M8 21H3v-5M16 21h5v-5"></path></svg>
+      <span id="fullscreenLabel">Full screen</span>
+    </button>
+  </div>
+  <div id="previewHelp" hidden>
+    <h2>Prototype controls</h2>
+    <div class="previewHelpRow"><span class="previewHelpKeys">↑ ↓ ← →</span><span>Move focus with the D-pad</span></div>
+    <div class="previewHelpRow"><span class="previewHelpKeys">Enter</span><span>OK / select</span></div>
+    <div class="previewHelpRow"><span class="previewHelpKeys">Esc / Backspace</span><span>Back</span></div>
+    <div class="previewHelpRow"><span class="previewHelpKeys">C</span><span>Change prompt · <strong id="promptVariantLabel">Question · 2/3</strong></span></div>
+    <div class="previewHelpRow"><span class="previewHelpKeys">E · L · P</span><span>Error · replay loading · PIN gate (<strong id="pinFlag">off</strong>)</span></div>
+    <div class="previewHelpRow"><span class="previewHelpKeys">V · Shift+V · D</span><span>Replay win · settle won · settle lost</span></div>
+    <div class="previewHelpRow"><span class="previewHelpKeys">T</span><span>Cycle visual theme</span></div>
+    <div class="previewHelpRow"><span class="previewHelpKeys">Shift+F · H</span><span>Full screen · show/hide controls</span></div>
+    <p class="previewHelpNote">Prototype with simulated data. These controls are not part of the Roku product.</p>
+  </div>
 </div>
 
 <script>
@@ -5746,12 +5775,55 @@ function bounce(sel, axis){
   el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls);
 }
 
+/* Browser-preview chrome only. It stays outside #scaler so it never changes the TV layout. */
+const previewTools=document.getElementById('previewTools');
+const previewHelp=document.getElementById('previewHelp');
+const previewHelpButton=document.getElementById('previewHelpButton');
+const fullscreenButton=document.getElementById('fullscreenButton');
+const fullscreenLabel=document.getElementById('fullscreenLabel');
+let previewToolsTimer=0;
+function showPreviewTools(){
+  previewTools.classList.remove('previewToolsIdle');
+  clearTimeout(previewToolsTimer);
+  if(!previewTools.classList.contains('previewToolsOpen')){
+    previewToolsTimer=setTimeout(()=>previewTools.classList.add('previewToolsIdle'),3500);
+  }
+}
+function togglePreviewHelp(force){
+  const open=force===undefined ? previewHelp.hidden : force;
+  previewHelp.hidden=!open;
+  previewTools.classList.toggle('previewToolsOpen',open);
+  previewHelpButton.setAttribute('aria-expanded',String(open));
+  showPreviewTools();
+}
+async function toggleFullscreen(){
+  try{
+    if(document.fullscreenElement) await document.exitFullscreen();
+    else await document.documentElement.requestFullscreen();
+  }catch(_error){ /* Fullscreen may be unavailable in embedded preview browsers. */ }
+}
+previewHelpButton.addEventListener('click',()=>togglePreviewHelp());
+fullscreenButton.addEventListener('click',toggleFullscreen);
+document.addEventListener('fullscreenchange',()=>{
+  fullscreenLabel.textContent=document.fullscreenElement?'Exit full screen':'Full screen';
+  fit();
+  showPreviewTools();
+});
+document.addEventListener('mousemove',showPreviewTools,{passive:true});
+showPreviewTools();
+
 window.addEventListener('keydown', e=>{
   // normalize: some environments deliver key:"" — fall back to e.code / keyCode
   let k=e.key;
   if (!k || k===''){
     const codeMap={Enter:'Enter',NumpadEnter:'Enter',Escape:'Escape',Backspace:'Backspace',ArrowUp:'ArrowUp',ArrowDown:'ArrowDown',ArrowLeft:'ArrowLeft',ArrowRight:'ArrowRight'};
     k = codeMap[e.code] || (e.keyCode===13?'Enter':e.keyCode===27?'Escape':e.keyCode===8?'Backspace':'');
+  }
+  if ((k==='h'||k==='H'||k==='?') && !e.ctrlKey && !e.metaKey && !e.altKey){
+    e.preventDefault(); togglePreviewHelp(); return;
+  }
+  if ((k==='f'||k==='F') && e.shiftKey && !e.ctrlKey && !e.metaKey && !e.altKey){
+    e.preventDefault(); toggleFullscreen(); return;
   }
   if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Enter','Escape','Backspace',' '].includes(k)) e.preventDefault();
   // demo: T cycles data-theme kalshi -> roku -> polymarket -> kalshi. Deliberately checked before the S.busy guard
@@ -5770,7 +5842,7 @@ window.addEventListener('keydown', e=>{
   if ((k==='l'||k==='L') && S.mode==='panel' && S.stack[S.stack.length-1]==='list'){ startLoading(); return; }
   if ((k==='p'||k==='P') && S.mode==='panel' && S.stack[S.stack.length-1]==='list'){
     S.pinRequired = !S.pinRequired; S.pinUnlocked=false;
-    const d=document.getElementById('pinFlag'); if(d) d.textContent = S.pinRequired?'PIN gate: ON':'PIN gate: off';
+    const d=document.getElementById('pinFlag'); if(d) d.textContent = S.pinRequired?'ON':'off';
     return;
   }
   // demo: force the current trading unlock to expire right now (§7.25 status, §4.8)
@@ -7407,23 +7479,14 @@ setInterval(()=>{
 /* ============================================================
    STAGE SCALING
    ============================================================ */
-// Fixed 2026-09-08, per user request: #devbar (the browser-preview-only remote/demo-key
-// legend -- not part of the real Roku product) is `position:fixed` to the actual browser
-// viewport, not to the 1920x1080 simulated screen. Previously fit() scaled/centered the
-// stage against the FULL viewport, so whenever the window was close to the stage's own
-// aspect ratio, devbar's fixed bottom strip landed on top of the simulated video/panel
-// instead of below it. fit() now reserves devbar's real rendered height off the bottom
-// of the viewport before computing the stage's scale/position, so the stage always ends
-// exactly above devbar -- out of the video area, never over it -- at any window size.
+// The preview help is floating browser chrome and reserves no space. The 1920x1080 canvas
+// therefore uses every available pixel, matching the composition seen on a TV.
 function fit(){
-  const devbar = document.getElementById('devbar');
-  const devbarH = devbar ? devbar.offsetHeight : 0;
-  const availH = Math.max(0, window.innerHeight - devbarH);
-  const s = Math.min(window.innerWidth/1920, availH/1080);
+  const s = Math.min(window.innerWidth/1920, window.innerHeight/1080);
   const el=$('#scaler');
   el.style.transform=`scale(${s})`;
   el.style.left = `${(window.innerWidth-1920*s)/2}px`;
-  el.style.top = `${(availH-1080*s)/2}px`;
+  el.style.top = `${(window.innerHeight-1080*s)/2}px`;
 }
 window.addEventListener('resize',fit); fit();
 
